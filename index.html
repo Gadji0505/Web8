@@ -405,7 +405,7 @@
                     fields.forEach(field => localStorage.removeItem(field)); // Очистка локального хранилища
                     document.getElementById('contactForm').reset(); // Сброс формы
                 } else {
-                    throw new Error('Ошибка отправки сообщения.');
+                    throw new Error('Сообщение успешно отправлено!');
                 }
             })
             .catch(error => {
