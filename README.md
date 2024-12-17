@@ -1,41 +1,55 @@
-#include <amp.h>
 #include <iostream>
 #include <vector>
+#include <amp.h>
 
 using namespace concurrency;
 
-const int N = 1024; // Размер матриц
+void multiplyMatrices(const std::vector<std::vector<int>>& A, 
+                      const std::vector<std::vector<int>>& B, 
+                      std::vector<std::vector<int>>& C, 
+                      int N) 
+{
+    // Создаем массивы для передачи в GPU
+    array<int, 2> A_array(N, N, A[0].data());
+    array<int, 2> B_array(N, N, B[0].data());
+    array<int, 2> C_array(N, N, C[0].data());
 
-void matrixMultiply(const std::vector<std::vector<int>>& A, const std::vector<std::vector<int>>& B, std::vector<std::vector<int>>& C) {
-    // Создаем массивы для передачи на GPU
-    array<int, 2> d_A(N, N, &A[0][0]);
-    array<int, 2> d_B(N, N, &B[0][0]);
-    array<int, 2> d_C(N, N); // Результирующий массив
-
-    // Используем захват, чтобы ссылаться на массивы
-    parallel_for_each(d_C.extent, [d_A, d_B, d_C](index<2> idx) restrict(amp) {
+    parallel_for_each(C_array.extent, [&](index<2> idx) restrict(amp) {
         int sum = 0;
         for (int k = 0; k < N; ++k) {
-            sum += d_A[idx[0]][k] * d_B[k][idx[1]];
+            sum += A_array[idx[0]][k] * B_array[k][idx[1]];
         }
-        d_C[idx] = sum;
+        C_array[idx] = sum;
     });
-
-    // Копируем результат обратно из GPU в CPU
-    copy(d_C, C);
 }
 
 int main() {
-    // Инициализация матриц
-    std::vector<std::vector<int>> A(N, std::vector<int>(N, 1)); // Матрица A (1s)
-    std::vector<std::vector<int>> B(N, std::vector<int>(N, 2)); // Матрица B (2s)
-    std::vector<std::vector<int>> C(N, std::vector<int>(N, 0)); // Результирующая матрица C
+    const int N = 512; // Размерность матрицы
+    std::vector<std::vector<int>> A(N, std::vector<int>(N));
+    std::vector<std::vector<int>> B(N, std::vector<int>(N));
+    std::vector<std::vector<int>> C(N, std::vector<int>(N, 0));
+
+    // Инициализация матриц A и B
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            A[i][j] = rand() % 10; // Заполнение случайными числами
+            B[i][j] = rand() % 10; // Заполнение случайными числами
+        }
+    }
 
     // Перемножение матриц
-    matrixMultiply(A, B, C);
+    multiplyMatrices(A, B, C, N);
 
-    // Печать некоторых элементов для проверки (например, элемент 0,0)
-    std::cout << "C[0][0] = " << C[0][0] << std::endl; // Ожидается 2048
+    // Вывод результата (для проверки, комментарий для больших матриц)
+    /*
+    std::cout << "Результат перемножения матриц:" << std::endl;
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            std::cout << C[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    */
 
     return 0;
 }
