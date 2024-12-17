@@ -4,51 +4,37 @@
 
 using namespace concurrency;
 
-// Функция для перемножения двух квадратных матриц с использованием AMP
-void multiplyMatrices(const std::vector<float>& A, const std::vector<float>& B, std::vector<float>& C, int N) {
-    // Создаем массивы для использования в AMP
-    array<float, 2> a(N, N, A.data());
-    array<float, 2> b(N, N, B.data());
-    array<float, 2> c(N, N);
+const int N = 1024; // Размер матриц
 
-    parallel_for_each(c.extent, [=](index<2> idx) restrict(amp) {
-        float sum = 0.0f;
-        for (int k = 0; k < N; k++) {
-            sum += a[idx[0]][k] * b[k][idx[1]];
+void matrixMultiply(const std::vector<std::vector<int>>& A, const std::vector<std::vector<int>>& B, std::vector<std::vector<int>>& C) {
+    // Создаем массивы для передачи на GPU
+    array<int, 2> d_A(N, N, &A[0][0]);
+    array<int, 2> d_B(N, N, &B[0][0]);
+    array<int, 2> d_C(N, N); // Результирующий массив
+
+    parallel_for_each(d_C.extent, [=](index<2> idx) restrict(amp) {
+        int sum = 0;
+        for (int k = 0; k < N; ++k) {
+            sum += d_A[idx[0]][k] * d_B[k][idx[1]];
         }
-        c[idx] = sum;
+        d_C[idx] = sum;
     });
 
-    // Копируем результат обратно в вектор C
-    copy(c, C.data());
+    // Копируем результат обратно из GPU в CPU
+    copy(d_C, C);
 }
 
 int main() {
-    const int N = 512; // Размер матриц
-
-    // Инициализация матриц A и B, их размерами N x N
-    std::vector<float> A(N * N);
-    std::vector<float> B(N * N);
-    std::vector<float> C(N * N); // Результирующая матрица
-
-    // Заполнение матриц A и B случайными значениями
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            A[i * N + j] = static_cast<float>(rand()) / RAND_MAX;
-            B[i * N + j] = static_cast<float>(rand()) / RAND_MAX;
-        }
-    }
+    // Инициализация матриц
+    std::vector<std::vector<int>> A(N, std::vector<int>(N, 1)); // Матрица A (1s)
+    std::vector<std::vector<int>> B(N, std::vector<int>(N, 2)); // Матрица B (2s)
+    std::vector<std::vector<int>> C(N, std::vector<int>(N, 0)); // Результирующая матрица C
 
     // Перемножение матриц
-    multiplyMatrices(A, B, C, N);
+    matrixMultiply(A, B, C);
 
-    // Вывод результата (лишь часть для проверки)
-    for (int i = 0; i < 5; ++i) {
-        for (int j = 0; j < 5; ++j) {
-            std::cout << C[i * N + j] << " ";
-        }
-        std::cout << std::endl;
-    }
+    // Печать результата (проверка, например, элемент (0,0))
+    std::cout << "Сумма для C[0][0]: " << C[0][0] << std::endl; // Ожидается 2048
 
     return 0;
 }
