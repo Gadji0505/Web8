@@ -1,74 +1,67 @@
-package djen;
-import java.util.*;
-/* Параметризированный массив. Методы-вывод элемента по его номеру, развернуть массив в обратном порядке, 
-вывод части элементов массива от начала до заданного индекса*/
+#include <amp.h>
+#include <iostream>
+#include <vector>
 
-class Mass<T>{
-T[]a;
-Mass(T []a)
-{
-this.a=a.clone();
-}
-void print ()
-{
-    System.out.println("Массив:");
-    for(int i=0;i<a.length;i++)
-        System.out.println(a[i]+" ");
-    System.out.println();
-}
-T elemByInd(int i) throws ArrayIndexOutOfBoundsException
-{
-if (i<0||i>a.length)
-    throw  new ArrayIndexOutOfBoundsException ("Выход за границы индекса");
-return a[i];
-}
-//void  obr () - обратный порядок
-void chast(int p) throws ArrayIndexOutOfBoundsException
-{
-if (p<0||p>a.length)
-    throw  new ArrayIndexOutOfBoundsException ("Выход за границы индекса");
-for (int i=0;i<p;i++)
-        System.out.println(a[i]+" ");
-}
+using namespace concurrency;
+using namespace std;
+
+const int SIZE = 256; // Размерность матриц (должна быть одинаковой для квадратных матриц)
+
+void matrixMultiplication(const array_view<int, 2>& A, const array_view<int, 2>& B, array_view<int, 2>& C) {
+    parallel_for_each(C.extent, [=](index<2> idx) restrict(amp) {
+        int sum = 0;
+        for (int k = 0; k < SIZE; ++k) {
+            sum += A[idx[0]][k] * B[k][idx[1]];
+        }
+        C[idx] = sum;
+    });
 }
 
-public class Djen {
+int main() {
+    // Инициализация матриц A и B вручную
+    int A[SIZE][SIZE];
+    int B[SIZE][SIZE];
 
-   
-    public static void main(String[] args) {
-        //работа с массивом целых
-      Integer [] m1= {1,2,3,4,5};
-      Mass<Integer> mi=new Mass<>(m1);
-      try{
-          System.out.println(mi.elemByInd(3));
-          //mi.obr();
-          mi.print();
-          mi.chast(2);
-      }
-      catch (ArrayIndexOutOfBoundsException e)
-      { System.out.println( e.getMessage());}
-       //работа с массивом вещественных
-      Double []m2={1.1,2.2,3.3,4.4,5.5};
-      Mass <Double> md=new Mass<>(m2);
-       try{
-          System.out.println(md.elemByInd(3));
-          //mi.obr();
-          md.print();
-          md.chast(2);
-      }
-        catch (ArrayIndexOutOfBoundsException e)
-      { System.out.println( e.getMessage());}
-        //работа с массивом строк
-        String []m3={"123","234","345"};
-      Mass <String> ms=new Mass<>(m3);
-       try{
-          System.out.println(ms.elemByInd(3));
-          //mi.obr();
-          ms.print();
-          ms.chast(2);
-      }
-        catch (ArrayIndexOutOfBoundsException e)
-      { System.out.println( e.getMessage());}
+    // Заполнение матрицы A
+    cout << "Введите элементы матрицы A (" << SIZE << "x" << SIZE << "):" << endl;
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j) {
+            cin >> A[i][j];
+        }
     }
-    //задание-написать метод разворота массива, добавить ввод данных с клавиатуры
+
+    // Заполнение матрицы B
+    cout << "Введите элементы матрицы B (" << SIZE << "x" << SIZE << "):" << endl;
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j) {
+            cin >> B[i][j];
+        }
+    }
+
+    // Объявление массивов для AMP
+    array<int, 2> A_array(SIZE, SIZE, reinterpret_cast<int*>(A));
+    array<int, 2> B_array(SIZE, SIZE, reinterpret_cast<int*>(B));
+    array<int, 2> C_array(SIZE, SIZE);
+
+    // Использование array_view для передачи массивов на GPU
+    array_view<int, 2> A_view = A_array;
+    array_view<int, 2> B_view = B_array;
+    array_view<int, 2> C_view = C_array;
+
+    // Выполнение сопоставления матриц на GPU
+    matrixMultiplication(A_view, B_view, C_view);
+
+    // Синхронизация и получение результата
+    C_view.synchronize();
+
+    // Вывод результата
+    cout << "Результат матричного умножения C = A * B:" << endl;
+    for (int i = 0; i < SIZE; ++i) {
+        for (int j = 0; j < SIZE; ++j) {
+            cout << C_view[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    return 0;
 }
