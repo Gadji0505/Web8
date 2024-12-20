@@ -6,7 +6,6 @@
     <title>Пример страницы с гиперссылками и формой</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        
         .gallery-container {
             position: relative;
             overflow: hidden;
@@ -237,7 +236,6 @@
                         <div class="gallery-item"><img src="https://fgall.ru/upload/iblock/cc9/0rdec36tgzip129cs9kyyfrb3g16yunn.jpg" alt="Image 7"></div>
                         <div class="gallery-item"><img src="https://fgall.ru/upload/iblock/756/jo0tznkkonip628n2kmw1nyya0jl8cxn.jpg" alt="Image 8"></div>
                         <div class="gallery-item"><img src="https://fgall.ru/upload/iblock/00a/2aapq0kk6taajkebdevf40m08k6m35e5.jpg" alt="Image 8"></div>
-
                     </div>
                     <button class="arrow arrow-right" onclick="moveSlide(1)">&#10095;</button>
                 </div>
@@ -266,35 +264,6 @@
                     <input type="number" id="quantity" class="form-control" min="1" required oninput="calculateTotalCost()">
                 </div>
             </form>
-    
-            <h2>Калькулятор стоимости услуги</h2>
-            <form id="orderForm"></form>
-                <form id="serviceForm">
-                    <div class="form-group">
-                      <label>Тип услуги:</label>
-                     <div>
-                            <input type="radio" name="serviceType" value="1" onclick="updateServiceOptions(); calculateTotalCost()" checked> Услуга 1 (Базовая комплектация)<br>
-                            <input type="radio" name="serviceType" value="2" onclick="updateServiceOptions(); calculateTotalCost()"> Услуга 2 (с опциями)<br>
-                            <input type="radio" name="serviceType" value="3" onclick="updateServiceOptions(); calculateTotalCost()"> Услуга 3 (свойства)<br>
-                        </div>
-                    </div>
-                    <div id="optionsContainer" class="form-group" style="display: none;">
-                        <label for="options">Выберите опцию:</label>
-                        <select id="options" class="form-control" onchange="calculateTotalCost()">
-                            <option value="0">-- Выберите опцию --</option>
-                            <option value="2000">Опция 1 (с доставкой) - 2000 руб.</option>
-                            <option value="3500">Опция 2 (с доставкой и установкой) - 3500 руб.</option>
-                        </select>
-                    </div>
-                    <div id="propertyContainer" class="form-group" style="display: none;">
-                        <label><input type="checkbox" id="property" onchange="calculateTotalCost()"> Свойство (страховка 500 руб.)</label>
-                    </div>
-                    <div class="form-group">
-                        <label for="serviceQuantity">Количество:</label>
-                        <input type="number" id="serviceQuantity" class="form-control" min="1" required oninput="calculateTotalCost()">
-                    </div>
-            </form>
-        </form>
             
             <h3 class="mt-4">Общая стоимость: <span id="totalCost">0</span> руб.</h3>
         </div>
@@ -355,63 +324,64 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         <script>
             // Сохранение и восстановление данных формы
-        document.addEventListener('DOMContentLoaded', () => {
-            const fields = ['fullName', 'email', 'phone', 'organization', 'message'];
-            fields.forEach(field => {
-                const storedValue = localStorage.getItem(field);
-                if (storedValue) {
-                    document.getElementById(field).value = storedValue;
-                }
-                document.getElementById(field).addEventListener('input', () => {
-                    localStorage.setItem(field, document.getElementById(field).value);
+            document.addEventListener('DOMContentLoaded', () => {
+                const fields = ['fullName', 'email', 'phone', 'organization', 'message'];
+                fields.forEach(field => {
+                    const storedValue = localStorage.getItem(field);
+                    if (storedValue) {
+                        document.getElementById(field).value = storedValue;
+                    }
+                    document.getElementById(field).addEventListener('input', () => {
+                        localStorage.setItem(field, document.getElementById(field).value);
+                    });
                 });
             });
-        });
 
-        // Открытие попапа и изменение URL
-        document.getElementById('feedbackBtn').addEventListener('click', () => {
-            $('#feedbackModal').modal('show');
-            history.pushState({ feedbackOpen: true }, '', '#feedback');
-        });
-
-        // Закрытие попапа и восстановление URL
-        window.addEventListener('popstate', (event) => {
-            if (event.state && event.state.feedbackOpen) {
-                $('#feedbackModal').modal('hide');
-            }
-        });
-
-        // Отправка данных формы
-        document.getElementById('contactForm').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const formData = {
-                fullName: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                organization: document.getElementById('organization').value,
-                message: document.getElementById('message').value,
-            };
-
-            fetch('https://formcarry.com/s/2Blv2LRJbcC', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => {
-                if (response.ok) {
-                    document.getElementById('responseMessage').innerText = 'Сообщение успешно отправлено!';
-                    fields.forEach(field => localStorage.removeItem(field)); // Очистка локального хранилища
-                    document.getElementById('contactForm').reset(); // Сброс формы
-                } else {
-                    throw new Error('Сообщение успешно отправлено!');
-                }
-            })
-            .catch(error => {
-                document.getElementById('responseMessage').innerText = error.message;
+            // Открытие попапа и изменение URL
+            document.getElementById('feedbackBtn').addEventListener('click', () => {
+                $('#feedbackModal').modal('show');
+                history.pushState({ feedbackOpen: true }, '', '#feedback');
             });
-        });
+
+            // Закрытие попапа и восстановление URL
+            window.addEventListener('popstate', (event) => {
+                if (event.state && event.state.feedbackOpen) {
+                    $('#feedbackModal').modal('hide');
+                }
+            });
+
+            // Отправка данных формы
+            document.getElementById('contactForm').addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = {
+                    fullName: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    organization: document.getElementById('organization').value,
+                    message: document.getElementById('message').value,
+                };
+
+                fetch('https://formcarry.com/s/2Blv2LRJbcC', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('responseMessage').innerText = 'Сообщение успешно отправлено!';
+                        fields.forEach(field => localStorage.removeItem(field)); // Очистка локального хранилища
+                        document.getElementById('contactForm').reset(); // Сброс формы
+                    } else {
+                        throw new Error('Сообщение успешно отправлено!');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('responseMessage').innerText = error.message;
+                });
+            });
+
             let currentIndex = 0; // Текущий индекс слайда
             const totalSlides = 9; // Общее количество слайдов
             const slidesToShowDesktop = 3; // Количество слайдов, показываемых одновременно на десктопе
@@ -438,28 +408,12 @@
                 const offset = -((currentIndex / slidesToShow) * 100); // Вычисляем смещение в процентах
                 gallery.style.transform = `translateX(${offset}%)`;
                 updatePager();
+           
             }
 
             // Инициализация
             updatePager();
-            
-            function updateServiceOptions() {
-                const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
-                const optionsContainer = document.getElementById('optionsContainer');
-                const propertyContainer = document.getElementById('propertyContainer');
-    
-                if (serviceType === "1") {
-                    optionsContainer.style.display = "none";
-                    propertyContainer.style.display = "none";
-                } else if (serviceType === "2") {
-                    optionsContainer.style.display = "block";
-                    propertyContainer.style.display = "none";
-                } else if (serviceType === "3") {
-                    optionsContainer.style.display = "none";
-                    propertyContainer.style.display = "block";
-                }
-            }
-    
+
             function calculateTotalCost() {
                 // Расчет стоимости товара
                 const productSelect = document.getElementById('product');
@@ -467,39 +421,14 @@
                 const quantityInput = document.getElementById('quantity');
                 const productQuantity = parseInt(quantityInput.value);
                 let totalProductCost = 0;
-    
+
                 if (productPrice > 0 && productQuantity > 0) {
                     totalProductCost = productPrice * productQuantity;
                 }
-    
-                // Расчет стоимости услуги
-                const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
-                const serviceQuantity = parseInt(document.getElementById('serviceQuantity').value);
-                let baseServicePrice = 1000; // Базовая цена для всех услуг
-                let totalServiceCost = 0;
-    
-                if (serviceType === "2") {
-                    const optionSelect = document.getElementById('options');
-                    const optionPrice = parseFloat(optionSelect.value);
-                    if (optionPrice > 0 ) {
-                        baseServicePrice = 0;
-                        baseServicePrice += optionPrice;
-                    }
-                } else if (serviceType === "3") {
-                    const propertyChecked = document.getElementById('property').checked;
-                    baseServicePrice = 0;
-                    if (propertyChecked) {
-                        baseServicePrice += 500; // Добавляем стоимость свойства
-                    }
-                }
-    
-                totalServiceCost = baseServicePrice * serviceQuantity;
-    
+
                 // Общая стоимость
-                const totalCost = totalProductCost + totalServiceCost;
-                document.getElementById('totalCost').textContent = totalCost;
+                document.getElementById('totalCost').textContent = totalProductCost;
             }
         </script>
     </body>
 </html>
-
