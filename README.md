@@ -1,3 +1,13 @@
+
+MATCH (m:Movie)<-[:ACTED_IN]-(a:Person)
+WITH m, COLLECT(a.name) AS actors
+RETURN m.title AS movie_title, 
+       m.released AS release_year,
+       actors,
+       SIZE(actors) AS number_of_actors
+ORDER BY m.title
+
+
 // Очистка базы данных
 MATCH (n) DETACH DELETE n;
 
