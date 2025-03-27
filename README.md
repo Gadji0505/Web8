@@ -1,703 +1,402 @@
-
-MATCH (m:Movie)<-[:ACTED_IN]-(a:Person)
-WITH m, COLLECT(a.name) AS actors
-RETURN m.title AS movie_title, 
-       m.released AS release_year,
-       actors,
-       SIZE(actors) AS number_of_actors
-ORDER BY m.title
-
-
-// Очистка базы данных
-MATCH (n) DETACH DELETE n;
-
-// Создание всей структуры одним CREATE
-CREATE 
-  (aspirin:Med {id: 1, name: "Aspirin", type: "Slab", dosage: "500 mg"}),
-  (ibuprofen:Med {id: 2, name: "Ibuprofen", type: "Slab", dosage: "400 mg"}),
-  (amoxicillin:Med {id: 3, name: "Amoxicillin", type: "Antibiotic", dosage: "250 mg"}),
-  (symamed:Med {id: 4, name: "Symamed", type: "Antibiotic", dosage: "300 mg"}),
-  (gyttalaks:Med {id: 5, name: "Gyttalaks", type: "Slab"}),
-  
-  (zdorove:Manufacturer {id:1, name:'Zdorove', country:'Russia', date_of_create:'22.08.2005'}),
-  (teplo:Manufacturer {id:2, name:'Teplo', country:'Belarus', date_of_create:'01.08.2006'}), 
-  (dobro:Manufacturer {id:3, name:'Dobro', country:'Russia', date_of_create:'19.03.1986'}),
-  (ozon:Manufacturer {id:4, name:'Ozon', country:'Russia', date_of_create:'15.07.2018'}),
-  (kliniks:Manufacturer {id:5, name:'Kliniks', country:'Belarus', date_of_create:'25.05.1995'}),
-  
-  (aibolit:Doctor {id:1, name:'Aibolit', qualife:'Terapevt', exp_by_years:5}),
-  (mechnikov:Doctor {id:2, name:'Mechnikov', qualife:'Surgeon', exp_by_years:10}),
-  (archimed:Doctor {id:3, name:'Archimed', qualife:'Lor', exp_by_years:10}),
-  (sklifosovskii:Doctor {id:4, name:'Sklifosovskii', qualife:'Hiryrg', exp_by_years:27}),
-  (dykin:Doctor {id:5, name:'Dykin', qualife:'Terapevt', exp_by_years:34}),
-  
-  (ashot:Patient {id:1, name:'Ashot', age:19, sex:'male', disease:'temperature'}),
-  (andrey:Patient {id:2, name:'Andrey', age:15, sex:'male', disease:'headache'}),
-  (anna:Patient {id:3, name:'Anna', age:35, sex:'female', disease:'nausea'}),
-  (masha:Patient {id:4, name:'Masha', age:23, sex:'female', disease:'temperature'}),
-  (gadgi:Patient {id:5, name:'Gadgi', age:18, sex:'male', disease:'temperature'}),
-  
-  (patient_1:Recept {id:1, patient_id:1, doctor_id:1, pharmacy_id:1, date_of_start:'01.01.2025', date_of_end:'01.01.2026'}), 
-  (patient_2:Recept {id:2, patient_id:2, doctor_id:2, pharmacy_id:2, date_of_start:'10.10.2004', date_of_end:'10.10.2006'}), 
-  (patient_3:Recept {id:3, patient_id:3, doctor_id:3, pharmacy_id:3, date_of_start:'05.05.1999', date_of_end:'05.05.2001'}), 
-  (patient_4:Recept {id:4, patient_id:4, doctor_id:4, pharmacy_id:4, date_of_start:'01.01.2025', date_of_end:'01.01.2026'}), 
-  (patient_5:Recept {id:5, patient_id:5, doctor_id:5, pharmacy_id:5, date_of_start:'10.10.2002', date_of_end:'10.03.2003'}),
-  
-  (patient_1)-[:HAS]->(aspirin),
-  (patient_2)-[:HAS]->(ibuprofen),
-  (patient_3)-[:HAS]->(amoxicillin),
-  (patient_4)-[:HAS]->(symamed),
-  (patient_5)-[:HAS]->(gyttalaks),
-  
-  (aibolit)-[:TREATS]->(ashot),
-  (mechnikov)-[:TREATS]->(andrey),
-  (archimed)-[:TREATS]->(anna),
-  (sklifosovskii)-[:TREATS]->(masha),
-  (dykin)-[:TREATS]->(gadgi),
-  
-  (ashot)-[:HAS_PRESCRIPTION]->(patient_1),
-  (andrey)-[:HAS_PRESCRIPTION]->(patient_2),
-  (anna)-[:HAS_PRESCRIPTION]->(patient_3),
-  (masha)-[:HAS_PRESCRIPTION]->(patient_4),
-  (gadgi)-[:HAS_PRESCRIPTION]->(patient_5),
-  
-  (zdorove)-[:PRODUCES]->(aspirin),
-  (teplo)-[:PRODUCES]->(ibuprofen),
-  (dobro)-[:PRODUCES]->(amoxicillin),
-  (ozon)-[:PRODUCES]->(symamed),
-  (kliniks)-[:PRODUCES]->(gyttalaks);
-
-// Запросы для выполнения заданий:
-
-// 1. Вывод докторов и их пациентов
-MATCH (d:Doctor)-[:TREATS]->(p:Patient)
-RETURN d.name AS Doctor, p.name AS Patient;
-
-// 2. Количество уникальных пациентов у каждого доктора
-MATCH (d:Doctor)-[:TREATS]->(p:Patient)
-WITH d, COUNT(DISTINCT p) AS patientCount
-RETURN d.name AS DoctorName, patientCount;
-
-// 3. Удаление заболевания у пациента (например, у пациента Ashot)
-MATCH (p:Patient {name: 'Ashot'})
-SET p.disease = NULL
-RETURN p;
-
-// 4. Поиск пациентов с определенным заболеванием (например, 'temperature')
-MATCH (p:Patient)
-WHERE p.disease CONTAINS 'temperature'
-RETURN p.name AS PatientName, p.disease;
-
-// 5. Доктора и список их пациентов
-MATCH (d:Doctor)-[:TREATS]->(p:Patient)
-WITH d, COLLECT(p.name) AS patients
-RETURN d.name AS Doctor, patients;
-
-//просто задание удалить так чтобы у какаого нибудь пациента не было заболевания(на паре)
-//работать с помощью команд удаления
-//находим все узлы с меткой пациент
-//null отсутствующее или не заданное значение
-//ВЫЖНО!!! Поиск в подстраке
-
-//ДЗ (Работаем с той же базой) Потом будет провекрка дз
-разобраться написать запросы по лабе 3, с гугл дисков взять что нужно
-
-
-
-
-
-// load movies
-// This is an initialization script for the movie graph.
-// Run it only once. ;)
-// Have you run it twice? Use `MATCH (n) WHERE (n:Person OR n:Movie) DETACH DELETE n` to start over.
-CREATE (TheMatrix:Movie {title:'The Matrix', released:1999, tagline:'Welcome to the Real World'})
-CREATE (Keanu:Person {name:'Keanu Reeves', born:1964})
-CREATE (Carrie:Person {name:'Carrie-Anne Moss', born:1967})
-CREATE (Laurence:Person {name:'Laurence Fishburne', born:1961})
-CREATE (Hugo:Person {name:'Hugo Weaving', born:1960})
-CREATE (AndyW:Person {name:'Andy Wachowski', born:1967})
-CREATE (LanaW:Person {name:'Lana Wachowski', born:1965})
-CREATE (JoelS:Person {name:'Joel Silver', born:1952})
-CREATE
-  (Keanu)-[:ACTED_IN {roles:['Neo']}]->(TheMatrix),
-  (Carrie)-[:ACTED_IN {roles:['Trinity']}]->(TheMatrix),
-  (Laurence)-[:ACTED_IN {roles:['Morpheus']}]->(TheMatrix),
-  (Hugo)-[:ACTED_IN {roles:['Agent Smith']}]->(TheMatrix),
-  (AndyW)-[:DIRECTED]->(TheMatrix),
-  (LanaW)-[:DIRECTED]->(TheMatrix),
-  (JoelS)-[:PRODUCED]->(TheMatrix)
-CREATE (Emil:Person {name:"Emil Eifrem", born:1978})
-CREATE (Emil)-[:ACTED_IN {roles:["Emil"]}]->(TheMatrix)
-CREATE (TheMatrixReloaded:Movie {title:'The Matrix Reloaded', released:2003, tagline:'Free your mind'})
-CREATE
-  (Keanu)-[:ACTED_IN {roles:['Neo']}]->(TheMatrixReloaded),
-  (Carrie)-[:ACTED_IN {roles:['Trinity']}]->(TheMatrixReloaded),
-  (Laurence)-[:ACTED_IN {roles:['Morpheus']}]->(TheMatrixReloaded),
-  (Hugo)-[:ACTED_IN {roles:['Agent Smith']}]->(TheMatrixReloaded),
-  (AndyW)-[:DIRECTED]->(TheMatrixReloaded),
-  (LanaW)-[:DIRECTED]->(TheMatrixReloaded),
-  (JoelS)-[:PRODUCED]->(TheMatrixReloaded)
-CREATE (TheMatrixRevolutions:Movie {title:'The Matrix Revolutions', released:2003, tagline:'Everything that has a beginning has an end'})
-CREATE
-  (Keanu)-[:ACTED_IN {roles:['Neo']}]->(TheMatrixRevolutions),
-  (Carrie)-[:ACTED_IN {roles:['Trinity']}]->(TheMatrixRevolutions),
-  (Laurence)-[:ACTED_IN {roles:['Morpheus']}]->(TheMatrixRevolutions),
-  (Hugo)-[:ACTED_IN {roles:['Agent Smith']}]->(TheMatrixRevolutions),
-  (AndyW)-[:DIRECTED]->(TheMatrixRevolutions),
-  (LanaW)-[:DIRECTED]->(TheMatrixRevolutions),
-  (JoelS)-[:PRODUCED]->(TheMatrixRevolutions)
-CREATE (TheDevilsAdvocate:Movie {title:"The Devil's Advocate", released:1997, tagline:'Evil has its winning ways'})
-CREATE (Charlize:Person {name:'Charlize Theron', born:1975})
-CREATE (Al:Person {name:'Al Pacino', born:1940})
-CREATE (Taylor:Person {name:'Taylor Hackford', born:1944})
-CREATE
-  (Keanu)-[:ACTED_IN {roles:['Kevin Lomax']}]->(TheDevilsAdvocate),
-  (Charlize)-[:ACTED_IN {roles:['Mary Ann Lomax']}]->(TheDevilsAdvocate),
-  (Al)-[:ACTED_IN {roles:['John Milton']}]->(TheDevilsAdvocate),
-  (Taylor)-[:DIRECTED]->(TheDevilsAdvocate)
-CREATE (AFewGoodMen:Movie {title:"A Few Good Men", released:1992, tagline:"In the heart of the nation's capital, in a courthouse of the U.S. government, one man will stop at nothing to keep his honor, and one will stop at nothing to find the truth."})
-CREATE (TomC:Person {name:'Tom Cruise', born:1962})
-CREATE (JackN:Person {name:'Jack Nicholson', born:1937})
-CREATE (DemiM:Person {name:'Demi Moore', born:1962})
-CREATE (KevinB:Person {name:'Kevin Bacon', born:1958})
-CREATE (KieferS:Person {name:'Kiefer Sutherland', born:1966})
-CREATE (NoahW:Person {name:'Noah Wyle', born:1971})
-CREATE (CubaG:Person {name:'Cuba Gooding Jr.', born:1968})
-CREATE (KevinP:Person {name:'Kevin Pollak', born:1957})
-CREATE (JTW:Person {name:'J.T. Walsh', born:1943})
-CREATE (JamesM:Person {name:'James Marshall', born:1967})
-CREATE (ChristopherG:Person {name:'Christopher Guest', born:1948})
-CREATE (RobR:Person {name:'Rob Reiner', born:1947})
-CREATE (AaronS:Person {name:'Aaron Sorkin', born:1961})
-CREATE
-  (TomC)-[:ACTED_IN {roles:['Lt. Daniel Kaffee']}]->(AFewGoodMen),
-  (JackN)-[:ACTED_IN {roles:['Col. Nathan R. Jessup']}]->(AFewGoodMen),
-  (DemiM)-[:ACTED_IN {roles:['Lt. Cdr. JoAnne Galloway']}]->(AFewGoodMen),
-  (KevinB)-[:ACTED_IN {roles:['Capt. Jack Ross']}]->(AFewGoodMen),
-  (KieferS)-[:ACTED_IN {roles:['Lt. Jonathan Kendrick']}]->(AFewGoodMen),
-  (NoahW)-[:ACTED_IN {roles:['Cpl. Jeffrey Barnes']}]->(AFewGoodMen),
-  (CubaG)-[:ACTED_IN {roles:['Cpl. Carl Hammaker']}]->(AFewGoodMen),
-  (KevinP)-[:ACTED_IN {roles:['Lt. Sam Weinberg']}]->(AFewGoodMen),
-  (JTW)-[:ACTED_IN {roles:['Lt. Col. Matthew Andrew Markinson']}]->(AFewGoodMen),
-  (JamesM)-[:ACTED_IN {roles:['Pfc. Louden Downey']}]->(AFewGoodMen),
-  (ChristopherG)-[:ACTED_IN {roles:['Dr. Stone']}]->(AFewGoodMen),
-  (AaronS)-[:ACTED_IN {roles:['Man in Bar']}]->(AFewGoodMen),
-  (RobR)-[:DIRECTED]->(AFewGoodMen),
-  (AaronS)-[:WROTE]->(AFewGoodMen)
-CREATE (TopGun:Movie {title:"Top Gun", released:1986, tagline:'I feel the need, the need for speed.'})
-CREATE (KellyM:Person {name:'Kelly McGillis', born:1957})
-CREATE (ValK:Person {name:'Val Kilmer', born:1959})
-CREATE (AnthonyE:Person {name:'Anthony Edwards', born:1962})
-CREATE (TomS:Person {name:'Tom Skerritt', born:1933})
-CREATE (MegR:Person {name:'Meg Ryan', born:1961})
-CREATE (TonyS:Person {name:'Tony Scott', born:1944})
-CREATE (JimC:Person {name:'Jim Cash', born:1941})
-CREATE
-  (TomC)-[:ACTED_IN {roles:['Maverick']}]->(TopGun),
-  (KellyM)-[:ACTED_IN {roles:['Charlie']}]->(TopGun),
-  (ValK)-[:ACTED_IN {roles:['Iceman']}]->(TopGun),
-  (AnthonyE)-[:ACTED_IN {roles:['Goose']}]->(TopGun),
-  (TomS)-[:ACTED_IN {roles:['Viper']}]->(TopGun),
-  (MegR)-[:ACTED_IN {roles:['Carole']}]->(TopGun),
-  (TonyS)-[:DIRECTED]->(TopGun),
-  (JimC)-[:WROTE]->(TopGun)
-CREATE (JerryMaguire:Movie {title:'Jerry Maguire', released:2000, tagline:'The rest of his life begins now.'})
-CREATE (ReneeZ:Person {name:'Renee Zellweger', born:1969})
-CREATE (KellyP:Person {name:'Kelly Preston', born:1962})
-CREATE (JerryO:Person {name:"Jerry O'Connell", born:1974})
-CREATE (JayM:Person {name:'Jay Mohr', born:1970})
-CREATE (BonnieH:Person {name:'Bonnie Hunt', born:1961})
-CREATE (ReginaK:Person {name:'Regina King', born:1971})
-CREATE (JonathanL:Person {name:'Jonathan Lipnicki', born:1996})
-CREATE (CameronC:Person {name:'Cameron Crowe', born:1957})
-CREATE
-  (TomC)-[:ACTED_IN {roles:['Jerry Maguire']}]->(JerryMaguire),
-  (CubaG)-[:ACTED_IN {roles:['Rod Tidwell']}]->(JerryMaguire),
-  (ReneeZ)-[:ACTED_IN {roles:['Dorothy Boyd']}]->(JerryMaguire),
-  (KellyP)-[:ACTED_IN {roles:['Avery Bishop']}]->(JerryMaguire),
-  (JerryO)-[:ACTED_IN {roles:['Frank Cushman']}]->(JerryMaguire),
-  (JayM)-[:ACTED_IN {roles:['Bob Sugar']}]->(JerryMaguire),
-  (BonnieH)-[:ACTED_IN {roles:['Laurel Boyd']}]->(JerryMaguire),
-  (ReginaK)-[:ACTED_IN {roles:['Marcee Tidwell']}]->(JerryMaguire),
-  (JonathanL)-[:ACTED_IN {roles:['Ray Boyd']}]->(JerryMaguire),
-  (CameronC)-[:DIRECTED]->(JerryMaguire),
-  (CameronC)-[:PRODUCED]->(JerryMaguire),
-  (CameronC)-[:WROTE]->(JerryMaguire)
-CREATE (StandByMe:Movie {title:"Stand By Me", released:1986, tagline:"For some, it's the last real taste of innocence, and the first real taste of life. But for everyone, it's the time that memories are made of."})
-CREATE (RiverP:Person {name:'River Phoenix', born:1970})
-CREATE (CoreyF:Person {name:'Corey Feldman', born:1971})
-CREATE (WilW:Person {name:'Wil Wheaton', born:1972})
-CREATE (JohnC:Person {name:'John Cusack', born:1966})
-CREATE (MarshallB:Person {name:'Marshall Bell', born:1942})
-CREATE
-  (WilW)-[:ACTED_IN {roles:['Gordie Lachance']}]->(StandByMe),
-  (RiverP)-[:ACTED_IN {roles:['Chris Chambers']}]->(StandByMe),
-  (JerryO)-[:ACTED_IN {roles:['Vern Tessio']}]->(StandByMe),
-  (CoreyF)-[:ACTED_IN {roles:['Teddy Duchamp']}]->(StandByMe),
-  (JohnC)-[:ACTED_IN {roles:['Denny Lachance']}]->(StandByMe),
-  (KieferS)-[:ACTED_IN {roles:['Ace Merrill']}]->(StandByMe),
-  (MarshallB)-[:ACTED_IN {roles:['Mr. Lachance']}]->(StandByMe),
-  (RobR)-[:DIRECTED]->(StandByMe)
-CREATE (AsGoodAsItGets:Movie {title:'As Good as It Gets', released:1997, tagline:'A comedy from the heart that goes for the throat.'})
-CREATE (HelenH:Person {name:'Helen Hunt', born:1963})
-CREATE (GregK:Person {name:'Greg Kinnear', born:1963})
-CREATE (JamesB:Person {name:'James L. Brooks', born:1940})
-CREATE
-  (JackN)-[:ACTED_IN {roles:['Melvin Udall']}]->(AsGoodAsItGets),
-  (HelenH)-[:ACTED_IN {roles:['Carol Connelly']}]->(AsGoodAsItGets),
-  (GregK)-[:ACTED_IN {roles:['Simon Bishop']}]->(AsGoodAsItGets),
-  (CubaG)-[:ACTED_IN {roles:['Frank Sachs']}]->(AsGoodAsItGets),
-  (JamesB)-[:DIRECTED]->(AsGoodAsItGets)
-CREATE (WhatDreamsMayCome:Movie {title:'What Dreams May Come', released:1998, tagline:'After life there is more. The end is just the beginning.'})
-CREATE (AnnabellaS:Person {name:'Annabella Sciorra', born:1960})
-CREATE (MaxS:Person {name:'Max von Sydow', born:1929})
-CREATE (WernerH:Person {name:'Werner Herzog', born:1942})
-CREATE (Robin:Person {name:'Robin Williams', born:1951})
-CREATE (VincentW:Person {name:'Vincent Ward', born:1956})
-CREATE
-  (Robin)-[:ACTED_IN {roles:['Chris Nielsen']}]->(WhatDreamsMayCome),
-  (CubaG)-[:ACTED_IN {roles:['Albert Lewis']}]->(WhatDreamsMayCome),
-  (AnnabellaS)-[:ACTED_IN {roles:['Annie Collins-Nielsen']}]->(WhatDreamsMayCome),
-  (MaxS)-[:ACTED_IN {roles:['The Tracker']}]->(WhatDreamsMayCome),
-  (WernerH)-[:ACTED_IN {roles:['The Face']}]->(WhatDreamsMayCome),
-  (VincentW)-[:DIRECTED]->(WhatDreamsMayCome)
-CREATE (SnowFallingonCedars:Movie {title:'Snow Falling on Cedars', released:1999, tagline:'First loves last. Forever.'})
-CREATE (EthanH:Person {name:'Ethan Hawke', born:1970})
-CREATE (RickY:Person {name:'Rick Yune', born:1971})
-CREATE (JamesC:Person {name:'James Cromwell', born:1940})
-CREATE (ScottH:Person {name:'Scott Hicks', born:1953})
-CREATE
-  (EthanH)-[:ACTED_IN {roles:['Ishmael Chambers']}]->(SnowFallingonCedars),
-  (RickY)-[:ACTED_IN {roles:['Kazuo Miyamoto']}]->(SnowFallingonCedars),
-  (MaxS)-[:ACTED_IN {roles:['Nels Gudmundsson']}]->(SnowFallingonCedars),
-  (JamesC)-[:ACTED_IN {roles:['Judge Fielding']}]->(SnowFallingonCedars),
-  (ScottH)-[:DIRECTED]->(SnowFallingonCedars)
-CREATE (YouveGotMail:Movie {title:"You've Got Mail", released:1998, tagline:'At odds in life... in love on-line.'})
-CREATE (ParkerP:Person {name:'Parker Posey', born:1968})
-CREATE (DaveC:Person {name:'Dave Chappelle', born:1973})
-CREATE (SteveZ:Person {name:'Steve Zahn', born:1967})
-CREATE (TomH:Person {name:'Tom Hanks', born:1956})
-CREATE (NoraE:Person {name:'Nora Ephron', born:1941})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Joe Fox']}]->(YouveGotMail),
-  (MegR)-[:ACTED_IN {roles:['Kathleen Kelly']}]->(YouveGotMail),
-  (GregK)-[:ACTED_IN {roles:['Frank Navasky']}]->(YouveGotMail),
-  (ParkerP)-[:ACTED_IN {roles:['Patricia Eden']}]->(YouveGotMail),
-  (DaveC)-[:ACTED_IN {roles:['Kevin Jackson']}]->(YouveGotMail),
-  (SteveZ)-[:ACTED_IN {roles:['George Pappas']}]->(YouveGotMail),
-  (NoraE)-[:DIRECTED]->(YouveGotMail)
-CREATE (SleeplessInSeattle:Movie {title:'Sleepless in Seattle', released:1993, tagline:'What if someone you never met, someone you never saw, someone you never knew was the only someone for you?'})
-CREATE (RitaW:Person {name:'Rita Wilson', born:1956})
-CREATE (BillPull:Person {name:'Bill Pullman', born:1953})
-CREATE (VictorG:Person {name:'Victor Garber', born:1949})
-CREATE (RosieO:Person {name:"Rosie O'Donnell", born:1962})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Sam Baldwin']}]->(SleeplessInSeattle),
-  (MegR)-[:ACTED_IN {roles:['Annie Reed']}]->(SleeplessInSeattle),
-  (RitaW)-[:ACTED_IN {roles:['Suzy']}]->(SleeplessInSeattle),
-  (BillPull)-[:ACTED_IN {roles:['Walter']}]->(SleeplessInSeattle),
-  (VictorG)-[:ACTED_IN {roles:['Greg']}]->(SleeplessInSeattle),
-  (RosieO)-[:ACTED_IN {roles:['Becky']}]->(SleeplessInSeattle),
-  (NoraE)-[:DIRECTED]->(SleeplessInSeattle)
-CREATE (JoeVersustheVolcano:Movie {title:'Joe Versus the Volcano', released:1990, tagline:'A story of love, lava and burning desire.'})
-CREATE (JohnS:Person {name:'John Patrick Stanley', born:1950})
-CREATE (Nathan:Person {name:'Nathan Lane', born:1956})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Joe Banks']}]->(JoeVersustheVolcano),
-  (MegR)-[:ACTED_IN {roles:['DeDe', 'Angelica Graynamore', 'Patricia Graynamore']}]->(JoeVersustheVolcano),
-  (Nathan)-[:ACTED_IN {roles:['Baw']}]->(JoeVersustheVolcano),
-  (JohnS)-[:DIRECTED]->(JoeVersustheVolcano)
-CREATE (WhenHarryMetSally:Movie {title:'When Harry Met Sally', released:1998, tagline:'At odds in life... in love on-line.'})
-CREATE (BillyC:Person {name:'Billy Crystal', born:1948})
-CREATE (CarrieF:Person {name:'Carrie Fisher', born:1956})
-CREATE (BrunoK:Person {name:'Bruno Kirby', born:1949})
-CREATE
-  (BillyC)-[:ACTED_IN {roles:['Harry Burns']}]->(WhenHarryMetSally),
-  (MegR)-[:ACTED_IN {roles:['Sally Albright']}]->(WhenHarryMetSally),
-  (CarrieF)-[:ACTED_IN {roles:['Marie']}]->(WhenHarryMetSally),
-  (BrunoK)-[:ACTED_IN {roles:['Jess']}]->(WhenHarryMetSally),
-  (RobR)-[:DIRECTED]->(WhenHarryMetSally),
-  (RobR)-[:PRODUCED]->(WhenHarryMetSally),
-  (NoraE)-[:PRODUCED]->(WhenHarryMetSally),
-  (NoraE)-[:WROTE]->(WhenHarryMetSally)
-CREATE (ThatThingYouDo:Movie {title:'That Thing You Do', released:1996, tagline:'In every life there comes a time when that thing you dream becomes that thing you do'})
-CREATE (LivT:Person {name:'Liv Tyler', born:1977})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Mr. White']}]->(ThatThingYouDo),
-  (LivT)-[:ACTED_IN {roles:['Faye Dolan']}]->(ThatThingYouDo),
-  (Charlize)-[:ACTED_IN {roles:['Tina']}]->(ThatThingYouDo),
-  (TomH)-[:DIRECTED]->(ThatThingYouDo)
-CREATE (TheReplacements:Movie {title:'The Replacements', released:2000, tagline:'Pain heals, Chicks dig scars... Glory lasts forever'})
-CREATE (Brooke:Person {name:'Brooke Langton', born:1970})
-CREATE (Gene:Person {name:'Gene Hackman', born:1930})
-CREATE (Orlando:Person {name:'Orlando Jones', born:1968})
-CREATE (Howard:Person {name:'Howard Deutch', born:1950})
-CREATE
-  (Keanu)-[:ACTED_IN {roles:['Shane Falco']}]->(TheReplacements),
-  (Brooke)-[:ACTED_IN {roles:['Annabelle Farrell']}]->(TheReplacements),
-  (Gene)-[:ACTED_IN {roles:['Jimmy McGinty']}]->(TheReplacements),
-  (Orlando)-[:ACTED_IN {roles:['Clifford Franklin']}]->(TheReplacements),
-  (Howard)-[:DIRECTED]->(TheReplacements)
-CREATE (RescueDawn:Movie {title:'RescueDawn', released:2006, tagline:"Based on the extraordinary true story of one man's fight for freedom"})
-CREATE (ChristianB:Person {name:'Christian Bale', born:1974})
-CREATE (ZachG:Person {name:'Zach Grenier', born:1954})
-CREATE
-  (MarshallB)-[:ACTED_IN {roles:['Admiral']}]->(RescueDawn),
-  (ChristianB)-[:ACTED_IN {roles:['Dieter Dengler']}]->(RescueDawn),
-  (ZachG)-[:ACTED_IN {roles:['Squad Leader']}]->(RescueDawn),
-  (SteveZ)-[:ACTED_IN {roles:['Duane']}]->(RescueDawn),
-  (WernerH)-[:DIRECTED]->(RescueDawn)
-CREATE (TheBirdcage:Movie {title:'The Birdcage', released:1996, tagline:'Come as you are'})
-CREATE (MikeN:Person {name:'Mike Nichols', born:1931})
-CREATE
-  (Robin)-[:ACTED_IN {roles:['Armand Goldman']}]->(TheBirdcage),
-  (Nathan)-[:ACTED_IN {roles:['Albert Goldman']}]->(TheBirdcage),
-  (Gene)-[:ACTED_IN {roles:['Sen. Kevin Keeley']}]->(TheBirdcage),
-  (MikeN)-[:DIRECTED]->(TheBirdcage)
-CREATE (Unforgiven:Movie {title:'Unforgiven', released:1992, tagline:"It's a hell of a thing, killing a man"})
-CREATE (RichardH:Person {name:'Richard Harris', born:1930})
-CREATE (ClintE:Person {name:'Clint Eastwood', born:1930})
-CREATE
-  (RichardH)-[:ACTED_IN {roles:['English Bob']}]->(Unforgiven),
-  (ClintE)-[:ACTED_IN {roles:['Bill Munny']}]->(Unforgiven),
-  (Gene)-[:ACTED_IN {roles:['Little Bill Daggett']}]->(Unforgiven),
-  (ClintE)-[:DIRECTED]->(Unforgiven)
-CREATE (JohnnyMnemonic:Movie {title:'Johnny Mnemonic', released:1995, tagline:'The hottest data on earth. In the coolest head in town'})
-CREATE (Takeshi:Person {name:'Takeshi Kitano', born:1947})
-CREATE (Dina:Person {name:'Dina Meyer', born:1968})
-CREATE (IceT:Person {name:'Ice-T', born:1958})
-CREATE (RobertL:Person {name:'Robert Longo', born:1953})
-CREATE
-  (Keanu)-[:ACTED_IN {roles:['Johnny Mnemonic']}]->(JohnnyMnemonic),
-  (Takeshi)-[:ACTED_IN {roles:['Takahashi']}]->(JohnnyMnemonic),
-  (Dina)-[:ACTED_IN {roles:['Jane']}]->(JohnnyMnemonic),
-  (IceT)-[:ACTED_IN {roles:['J-Bone']}]->(JohnnyMnemonic),
-  (RobertL)-[:DIRECTED]->(JohnnyMnemonic)
-CREATE (CloudAtlas:Movie {title:'Cloud Atlas', released:2012, tagline:'Everything is connected'})
-CREATE (HalleB:Person {name:'Halle Berry', born:1966})
-CREATE (JimB:Person {name:'Jim Broadbent', born:1949})
-CREATE (TomT:Person {name:'Tom Tykwer', born:1965})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Zachry', 'Dr. Henry Goose', 'Isaac Sachs', 'Dermot Hoggins']}]->(CloudAtlas),
-  (Hugo)-[:ACTED_IN {roles:['Bill Smoke', 'Haskell Moore', 'Tadeusz Kesselring', 'Nurse Noakes', 'Boardman Mephi', 'Old Georgie']}]->(CloudAtlas),
-  (HalleB)-[:ACTED_IN {roles:['Luisa Rey', 'Jocasta Ayrs', 'Ovid', 'Meronym']}]->(CloudAtlas),
-  (JimB)-[:ACTED_IN {roles:['Vyvyan Ayrs', 'Captain Molyneux', 'Timothy Cavendish']}]->(CloudAtlas),
-  (TomT)-[:DIRECTED]->(CloudAtlas),
-  (AndyW)-[:DIRECTED]->(CloudAtlas),
-  (LanaW)-[:DIRECTED]->(CloudAtlas)
-CREATE (TheDaVinciCode:Movie {title:'The Da Vinci Code', released:2006, tagline:'Break The Codes'})
-CREATE (IanM:Person {name:'Ian McKellen', born:1939})
-CREATE (AudreyT:Person {name:'Audrey Tautou', born:1976})
-CREATE (PaulB:Person {name:'Paul Bettany', born:1971})
-CREATE (RonH:Person {name:'Ron Howard', born:1954})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Dr. Robert Langdon']}]->(TheDaVinciCode),
-  (IanM)-[:ACTED_IN {roles:['Sir Leight Teabing']}]->(TheDaVinciCode),
-  (AudreyT)-[:ACTED_IN {roles:['Sophie Neveu']}]->(TheDaVinciCode),
-  (PaulB)-[:ACTED_IN {roles:['Silas']}]->(TheDaVinciCode),
-  (RonH)-[:DIRECTED]->(TheDaVinciCode)
-CREATE (VforVendetta:Movie {title:'V for Vendetta', released:2006, tagline:'Freedom! Forever!'})
-CREATE (NatalieP:Person {name:'Natalie Portman', born:1981})
-CREATE (StephenR:Person {name:'Stephen Rea', born:1946})
-CREATE (JohnH:Person {name:'John Hurt', born:1940})
-CREATE (BenM:Person {name: 'Ben Miles', born:1967})
-CREATE
-  (Hugo)-[:ACTED_IN {roles:['V']}]->(VforVendetta),
-  (NatalieP)-[:ACTED_IN {roles:['Evey Hammond']}]->(VforVendetta),
-  (StephenR)-[:ACTED_IN {roles:['Eric Finch']}]->(VforVendetta),
-  (JohnH)-[:ACTED_IN {roles:['High Chancellor Adam Sutler']}]->(VforVendetta),
-  (BenM)-[:ACTED_IN {roles:['Dascomb']}]->(VforVendetta),
-  (JamesM)-[:DIRECTED]->(VforVendetta),
-  (AndyW)-[:PRODUCED]->(VforVendetta),
-  (LanaW)-[:PRODUCED]->(VforVendetta),
-  (JoelS)-[:PRODUCED]->(VforVendetta),
-  (AndyW)-[:WROTE]->(VforVendetta),
-  (LanaW)-[:WROTE]->(VforVendetta)
-CREATE (SpeedRacer:Movie {title:'Speed Racer', released:2008, tagline:'Speed has no limits'})
-CREATE (EmileH:Person {name:'Emile Hirsch', born:1985})
-CREATE (JohnG:Person {name:'John Goodman', born:1960})
-CREATE (SusanS:Person {name:'Susan Sarandon', born:1946})
-CREATE (MatthewF:Person {name:'Matthew Fox', born:1966})
-CREATE (ChristinaR:Person {name:'Christina Ricci', born:1980})
-CREATE (Rain:Person {name:'Rain', born:1982})
-CREATE
-  (EmileH)-[:ACTED_IN {roles:['Speed Racer']}]->(SpeedRacer),
-  (JohnG)-[:ACTED_IN {roles:['Pops']}]->(SpeedRacer),
-  (SusanS)-[:ACTED_IN {roles:['Mom']}]->(SpeedRacer),
-  (MatthewF)-[:ACTED_IN {roles:['Racer X']}]->(SpeedRacer),
-  (ChristinaR)-[:ACTED_IN {roles:['Trixie']}]->(SpeedRacer),
-  (Rain)-[:ACTED_IN {roles:['Taejo Togokahn']}]->(SpeedRacer),
-  (BenM)-[:ACTED_IN {roles:['Cass Jones']}]->(SpeedRacer),
-  (AndyW)-[:DIRECTED]->(SpeedRacer),
-  (LanaW)-[:DIRECTED]->(SpeedRacer),
-  (AndyW)-[:WROTE]->(SpeedRacer),
-  (LanaW)-[:WROTE]->(SpeedRacer),
-  (JoelS)-[:PRODUCED]->(SpeedRacer)
-CREATE (NinjaAssassin:Movie {title:'Ninja Assassin', released:2009, tagline:'Prepare to enter a secret world of assassins'})
-CREATE (NaomieH:Person {name:'Naomie Harris'})
-CREATE
-  (Rain)-[:ACTED_IN {roles:['Raizo']}]->(NinjaAssassin),
-  (NaomieH)-[:ACTED_IN {roles:['Mika Coretti']}]->(NinjaAssassin),
-  (RickY)-[:ACTED_IN {roles:['Takeshi']}]->(NinjaAssassin),
-  (BenM)-[:ACTED_IN {roles:['Ryan Maslow']}]->(NinjaAssassin),
-  (JamesM)-[:DIRECTED]->(NinjaAssassin),
-  (AndyW)-[:PRODUCED]->(NinjaAssassin),
-  (LanaW)-[:PRODUCED]->(NinjaAssassin),
-  (JoelS)-[:PRODUCED]->(NinjaAssassin)
-CREATE (TheGreenMile:Movie {title:'The Green Mile', released:1999, tagline:"Walk a mile you'll never forget."})
-CREATE (MichaelD:Person {name:'Michael Clarke Duncan', born:1957})
-CREATE (DavidM:Person {name:'David Morse', born:1953})
-CREATE (SamR:Person {name:'Sam Rockwell', born:1968})
-CREATE (GaryS:Person {name:'Gary Sinise', born:1955})
-CREATE (PatriciaC:Person {name:'Patricia Clarkson', born:1959})
-CREATE (FrankD:Person {name:'Frank Darabont', born:1959})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Paul Edgecomb']}]->(TheGreenMile),
-  (MichaelD)-[:ACTED_IN {roles:['John Coffey']}]->(TheGreenMile),
-  (DavidM)-[:ACTED_IN {roles:['Brutus "Brutal" Howell']}]->(TheGreenMile),
-  (BonnieH)-[:ACTED_IN {roles:['Jan Edgecomb']}]->(TheGreenMile),
-  (JamesC)-[:ACTED_IN {roles:['Warden Hal Moores']}]->(TheGreenMile),
-  (SamR)-[:ACTED_IN {roles:['"Wild Bill" Wharton']}]->(TheGreenMile),
-  (GaryS)-[:ACTED_IN {roles:['Burt Hammersmith']}]->(TheGreenMile),
-  (PatriciaC)-[:ACTED_IN {roles:['Melinda Moores']}]->(TheGreenMile),
-  (FrankD)-[:DIRECTED]->(TheGreenMile)
-CREATE (FrostNixon:Movie {title:'Frost/Nixon', released:2008, tagline:'400 million people were waiting for the truth.'})
-CREATE (FrankL:Person {name:'Frank Langella', born:1938})
-CREATE (MichaelS:Person {name:'Michael Sheen', born:1969})
-CREATE (OliverP:Person {name:'Oliver Platt', born:1960})
-CREATE
-  (FrankL)-[:ACTED_IN {roles:['Richard Nixon']}]->(FrostNixon),
-  (MichaelS)-[:ACTED_IN {roles:['David Frost']}]->(FrostNixon),
-  (KevinB)-[:ACTED_IN {roles:['Jack Brennan']}]->(FrostNixon),
-  (OliverP)-[:ACTED_IN {roles:['Bob Zelnick']}]->(FrostNixon),
-  (SamR)-[:ACTED_IN {roles:['James Reston, Jr.']}]->(FrostNixon),
-  (RonH)-[:DIRECTED]->(FrostNixon)
-CREATE (Hoffa:Movie {title:'Hoffa', released:1992, tagline:"He didn't want law. He wanted justice."})
-CREATE (DannyD:Person {name:'Danny DeVito', born:1944})
-CREATE (JohnR:Person {name:'John C. Reilly', born:1965})
-CREATE
-  (JackN)-[:ACTED_IN {roles:['Hoffa']}]->(Hoffa),
-  (DannyD)-[:ACTED_IN {roles:['Robert "Bobby" Ciaro']}]->(Hoffa),
-  (JTW)-[:ACTED_IN {roles:['Frank Fitzsimmons']}]->(Hoffa),
-  (JohnR)-[:ACTED_IN {roles:['Peter "Pete" Connelly']}]->(Hoffa),
-  (DannyD)-[:DIRECTED]->(Hoffa)
-CREATE (Apollo13:Movie {title:'Apollo 13', released:1995, tagline:'Houston, we have a problem.'})
-CREATE (EdH:Person {name:'Ed Harris', born:1950})
-CREATE (BillPax:Person {name:'Bill Paxton', born:1955})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Jim Lovell']}]->(Apollo13),
-  (KevinB)-[:ACTED_IN {roles:['Jack Swigert']}]->(Apollo13),
-  (EdH)-[:ACTED_IN {roles:['Gene Kranz']}]->(Apollo13),
-  (BillPax)-[:ACTED_IN {roles:['Fred Haise']}]->(Apollo13),
-  (GaryS)-[:ACTED_IN {roles:['Ken Mattingly']}]->(Apollo13),
-  (RonH)-[:DIRECTED]->(Apollo13)
-CREATE (Twister:Movie {title:'Twister', released:1996, tagline:"Don't Breathe. Don't Look Back."})
-CREATE (PhilipH:Person {name:'Philip Seymour Hoffman', born:1967})
-CREATE (JanB:Person {name:'Jan de Bont', born:1943})
-CREATE
-  (BillPax)-[:ACTED_IN {roles:['Bill Harding']}]->(Twister),
-  (HelenH)-[:ACTED_IN {roles:['Dr. Jo Harding']}]->(Twister),
-  (ZachG)-[:ACTED_IN {roles:['Eddie']}]->(Twister),
-  (PhilipH)-[:ACTED_IN {roles:['Dustin "Dusty" Davis']}]->(Twister),
-  (JanB)-[:DIRECTED]->(Twister)
-CREATE (CastAway:Movie {title:'Cast Away', released:2000, tagline:'At the edge of the world, his journey begins.'})
-CREATE (RobertZ:Person {name:'Robert Zemeckis', born:1951})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Chuck Noland']}]->(CastAway),
-  (HelenH)-[:ACTED_IN {roles:['Kelly Frears']}]->(CastAway),
-  (RobertZ)-[:DIRECTED]->(CastAway)
-CREATE (OneFlewOvertheCuckoosNest:Movie {title:"One Flew Over the Cuckoo's Nest", released:1975, tagline:"If he's crazy, what does that make you?"})
-CREATE (MilosF:Person {name:'Milos Forman', born:1932})
-CREATE
-  (JackN)-[:ACTED_IN {roles:['Randle McMurphy']}]->(OneFlewOvertheCuckoosNest),
-  (DannyD)-[:ACTED_IN {roles:['Martini']}]->(OneFlewOvertheCuckoosNest),
-  (MilosF)-[:DIRECTED]->(OneFlewOvertheCuckoosNest)
-CREATE (SomethingsGottaGive:Movie {title:"Something's Gotta Give", released:2003})
-CREATE (DianeK:Person {name:'Diane Keaton', born:1946})
-CREATE (NancyM:Person {name:'Nancy Meyers', born:1949})
-CREATE
-  (JackN)-[:ACTED_IN {roles:['Harry Sanborn']}]->(SomethingsGottaGive),
-  (DianeK)-[:ACTED_IN {roles:['Erica Barry']}]->(SomethingsGottaGive),
-  (Keanu)-[:ACTED_IN {roles:['Julian Mercer']}]->(SomethingsGottaGive),
-  (NancyM)-[:DIRECTED]->(SomethingsGottaGive),
-  (NancyM)-[:PRODUCED]->(SomethingsGottaGive),
-  (NancyM)-[:WROTE]->(SomethingsGottaGive)
-CREATE (BicentennialMan:Movie {title:'Bicentennial Man', released:1999, tagline:"One robot's 200 year journey to become an ordinary man."})
-CREATE (ChrisC:Person {name:'Chris Columbus', born:1958})
-CREATE
-  (Robin)-[:ACTED_IN {roles:['Andrew Marin']}]->(BicentennialMan),
-  (OliverP)-[:ACTED_IN {roles:['Rupert Burns']}]->(BicentennialMan),
-  (ChrisC)-[:DIRECTED]->(BicentennialMan)
-CREATE (CharlieWilsonsWar:Movie {title:"Charlie Wilson's War", released:2007, tagline:"A stiff drink. A little mascara. A lot of nerve. Who said they couldn't bring down the Soviet empire."})
-CREATE (JuliaR:Person {name:'Julia Roberts', born:1967})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Rep. Charlie Wilson']}]->(CharlieWilsonsWar),
-  (JuliaR)-[:ACTED_IN {roles:['Joanne Herring']}]->(CharlieWilsonsWar),
-  (PhilipH)-[:ACTED_IN {roles:['Gust Avrakotos']}]->(CharlieWilsonsWar),
-  (MikeN)-[:DIRECTED]->(CharlieWilsonsWar)
-CREATE (ThePolarExpress:Movie {title:'The Polar Express', released:2004, tagline:'This Holiday Season… Believe'})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Hero Boy', 'Father', 'Conductor', 'Hobo', 'Scrooge', 'Santa Claus']}]->(ThePolarExpress),
-  (RobertZ)-[:DIRECTED]->(ThePolarExpress)
-CREATE (ALeagueofTheirOwn:Movie {title:'A League of Their Own', released:1992, tagline:'Once in a lifetime you get a chance to do something different.'})
-CREATE (Madonna:Person {name:'Madonna', born:1954})
-CREATE (GeenaD:Person {name:'Geena Davis', born:1956})
-CREATE (LoriP:Person {name:'Lori Petty', born:1963})
-CREATE (PennyM:Person {name:'Penny Marshall', born:1943})
-CREATE
-  (TomH)-[:ACTED_IN {roles:['Jimmy Dugan']}]->(ALeagueofTheirOwn),
-  (GeenaD)-[:ACTED_IN {roles:['Dottie Hinson']}]->(ALeagueofTheirOwn),
-  (LoriP)-[:ACTED_IN {roles:['Kit Keller']}]->(ALeagueofTheirOwn),
-  (RosieO)-[:ACTED_IN {roles:['Doris Murphy']}]->(ALeagueofTheirOwn),
-  (Madonna)-[:ACTED_IN {roles:['"All the Way" Mae Mordabito']}]->(ALeagueofTheirOwn),
-  (BillPax)-[:ACTED_IN {roles:['Bob Hinson']}]->(ALeagueofTheirOwn),
-  (PennyM)-[:DIRECTED]->(ALeagueofTheirOwn)
-CREATE (PaulBlythe:Person {name:'Paul Blythe'})
-CREATE (AngelaScope:Person {name:'Angela Scope'})
-CREATE (JessicaThompson:Person {name:'Jessica Thompson'})
-CREATE (JamesThompson:Person {name:'James Thompson'})
-CREATE
-  (JamesThompson)-[:FOLLOWS]->(JessicaThompson),
-  (AngelaScope)-[:FOLLOWS]->(JessicaThompson),
-  (PaulBlythe)-[:FOLLOWS]->(AngelaScope)
-CREATE
-  (JessicaThompson)-[:REVIEWED {summary:'An amazing journey', rating:95}]->(CloudAtlas),
-  (JessicaThompson)-[:REVIEWED {summary:'Silly, but fun', rating:65}]->(TheReplacements),
-  (JamesThompson)-[:REVIEWED {summary:'The coolest football movie ever', rating:100}]->(TheReplacements),
-  (AngelaScope)-[:REVIEWED {summary:'Pretty funny at times', rating:62}]->(TheReplacements),
-  (JessicaThompson)-[:REVIEWED {summary:'Dark, but compelling', rating:85}]->(Unforgiven),
-  (JessicaThompson)-[:REVIEWED {summary:"Slapstick redeemed only by the Robin Williams and Gene Hackman's stellar performances", rating:45}]->(TheBirdcage),
-  (JessicaThompson)-[:REVIEWED {summary:'A solid romp', rating:68}]->(TheDaVinciCode),
-  (JamesThompson)-[:REVIEWED {summary:'Fun, but a little far fetched', rating:65}]->(TheDaVinciCode)
-// Parasite movie and cast
-CREATE (Parasite:Movie {title:'Parasite', released:2019, tagline:'Act like you own the place'})
-CREATE (KangHoSong:Person {name:'Kang-ho Song'})
-CREATE (SunKyunLee:Person {name:'Sun-kyun Lee'})
-CREATE (YeoJeongJo:Person {name:'Yeo-jeong Jo'})
-CREATE (WooSikChoi:Person {name:'Woo-sik Choi'})
-CREATE (SoDamPark:Person  {name:'So-dam Park'})
-CREATE
-  (KangHoSong)-[:ACTED_IN {roles:['Ki Taek']}]->(Parasite),
-  (SunKyunLee)-[:ACTED_IN {roles:['Dong Ik']}]->(Parasite),
-  (YeoJeongJo)-[:ACTED_IN {roles:['Yeon Kyo']}]->(Parasite),
-  (WooSikChoi)-[:ACTED_IN {roles:['Ki Woo']}]->(Parasite),
-  (SoDamPark)-[:ACTED_IN {roles:['Ki Jung']}]->(Parasite)
-// Joker movie and cast
-CREATE (Joker:Movie {title:'Joker', released:2019, tagline:'Put on a happy face'})
-CREATE (JoaquinPhoenix:Person {name:'Joaquin Phoenix'})
-CREATE (RobertDeNiro:Person {name:'Robert De Niro'})
-CREATE (ZazieBeetz:Person {name:'Zazie Beetz'})
-CREATE
-  (JoaquinPhoenix)-[:ACTED_IN {roles:['Arthur Fleck']}]->(Joker),
-  (RobertDeNiro)-[:ACTED_IN {roles:['Murray Franklin']}]->(Joker),
-  (ZazieBeetz)-[:ACTED_IN {roles:['Sophie Dumond']}]->(Joker)
-;
+Создание бд
+// Коллекция болезней
+db.disease.insertMany([
+ { _id: ObjectId(), name: "Грипп", type: "Вирусная инфекция", severity: "Средняя", contagious: true },
+ { _id: ObjectId(), name: "Пневмония", type: "Бактериальная инфекция", severity: "Высокая", contagious: false },
+ { _id: ObjectId(), name: "Гипертония", type: "Сердечно-сосудистое заболевание", severity: "Средняя", contagious: false },
+ { _id: ObjectId(), name: "Диабет", type: "Обменное заболевание", severity: "Высокая", contagious: false },
+ { _id: ObjectId(), name: "Астма", type: "Респираторное заболевание", severity: "Средняя", contagious: false },
+ { _id: ObjectId(), name: "Аллергия", type: "Иммунологическое заболевание", severity: "Низкая", contagious: false },
+ { _id: ObjectId(), name: "Гастрит", type: "Заболевание ЖКТ", severity: "Средняя", contagious: false }
+])
+ 
+// Коллекция симптомов
+db.symptom.insertMany([
+ { _id: ObjectId(), name: "Кашель", type: "Респираторный", severity: "Средняя" },
+ { _id: ObjectId(), name: "Лихорадка", type: "Инфекционный", severity: "Высокая" },
+ { _id: ObjectId(), name: "Головная боль", type: "Неврологический", severity: "Низкая" },
+ { _id: ObjectId(), name: "Боль в горле", type: "Респираторный", severity: "Средняя" },
+ { _id: ObjectId(), name: "Насморк", type: "Респираторный", severity: "Низкая" },
+ { _id: ObjectId(), name: "Высокое давление", type: "Кардиологический", severity: "Высокая" },
+ { _id: ObjectId(), name: "Тошнота", type: "Гастроэнтерологический", severity: "Средняя" }
+])
+ 
+ 
+// Коллекция врачей
+db.doctor.insertMany([
+ { _id: ObjectId(), name: "Иванов Иван", specialty: "Терапевт", experience: 10 },
+ { _id: ObjectId(), name: "Петрова Анна", specialty: "Кардиолог", experience: 5 },
+ { _id: ObjectId(), name: "Сидоров Петр", specialty: "Пульмонолог", experience: 15 },
+ { _id: ObjectId(), name: "Козлова Мария", specialty: "Аллерголог", experience: 8 },
+ { _id: ObjectId(), name: "Смирнов Дмитрий", specialty: "Гастроэнтеролог", experience: 12 },
+ { _id: ObjectId(), name: "Кузнецова Елена", specialty: "Инфекционист", experience: 7 },
+ { _id: ObjectId(), name: "Федорова Ольга", specialty: "Эндокринолог", experience: 10 }
+])
+ 
+// Коллекция назначений - упрощенная без внешних ключей
+db.prescriptionNew.insertMany([
+ {  _id: ObjectId(), medication: "Парацетамол", dosage: "2 таблетки 3 раза в день" },
+ {  _id: ObjectId(), medication: "Каптоприл", dosage: "1 таблетка 2 раза в день" },
+ {  _id: ObjectId(), medication: "Амоксициллин", dosage: "500 мг 3 раза в день" },
+ {  _id: ObjectId(), medication: "Супрастин", dosage: "1 таблетка 3 раза в день" },
+ {  _id: ObjectId(), medication: "Омепразол", dosage: "20 мг 1 раз в день" },
+ {  _id: ObjectId(), medication: "Оселтамивир", dosage: "75 мг 2 раза в день" },
+ {  _id: ObjectId(), medication: "Инсулин", dosage: "По назначению врача" }
+])
+ 
+// Коллекция людей - упрощенная без внешних ключей
+db.peopleNew.insertMany([
+ {  _id: ObjectId(), name: "Петр Петров", age: 30},
+ {  _id: ObjectId(), name: "Мария Иванова", age: 45},
+ {  _id: ObjectId(), name: "Иван Сидоров", age: 25},
+ {  _id: ObjectId(), name: "Анна Кузнецова", age: 50},
+ {  _id: ObjectId(), name: "Дмитрий Смирнов", age: 35},
+ {  _id: ObjectId(), name: "Елена Федорова", age: 60},
+ { _id: ObjectId(), name: "Ольга Козлова", age: 28}
+]);
+// Получаем идентификаторы симптомов
+const coughId = db.symptom.findOne({ name: "Кашель" })._id;
+const feverId = db.symptom.findOne({ name: "Лихорадка" })._id;
+const headacheId = db.symptom.findOne({ name: "Головная боль" })._id;
+const soreThroatId = db.symptom.findOne({ name: "Боль в горле" })._id;
+const runnyNoseId = db.symptom.findOne({ name: "Насморк" })._id;
+const highPressureId = db.symptom.findOne({ name: "Высокое давление" })._id;
+const nauseaId = db.symptom.findOne({ name: "Тошнота" })._id;
+ 
+// Получаем идентификаторы назначений
+const paracetamolId = db.prescriptionNew.findOne({ medication: "Парацетамол" })._id;
+const captoprilId = db.prescriptionNew.findOne({ medication: "Каптоприл" })._id;
+const amoxicillinId = db.prescriptionNew.findOne({ medication: "Амоксициллин" })._id;
+const suprastinId = db.prescriptionNew.findOne({ medication: "Супрастин" })._id;
+const omeprazoleId = db.prescriptionNew.findOne({ medication: "Омепразол" })._id;
+const oseltamivirId = db.prescriptionNew.findOne({ medication: "Оселтамивир" })._id;
+const insulinId = db.prescriptionNew.findOne({ medication: "Инсулин" })._id;
+ 
+// Получаем идентификаторы болезней
+const fluId = db.disease.findOne({ name: "Грипп" })._id;
+const pneumoniaId = db.disease.findOne({ name: "Пневмония" })._id;
+const hypertensionId = db.disease.findOne({ name: "Гипертония" })._id;
+const diabetesId = db.disease.findOne({ name: "Диабет" })._id;
+const asthmaId = db.disease.findOne({ name: "Астма" })._id;
+const allergyId = db.disease.findOne({ name: "Аллергия" })._id;
+const gastritisId = db.disease.findOne({ name: "Гастрит" })._id;
+ 
+// Получаем идентификаторы врачей
+const therapistId = db.doctor.findOne({ name: "Иванов Иван" })._id;
+const cardiologistId = db.doctor.findOne({ name: "Петрова Анна" })._id;
+const pulmonologistId = db.doctor.findOne({ name: "Сидоров Петр" })._id;
+const allergistId = db.doctor.findOne({ name: "Козлова Мария" })._id;
+const gastroenterologistId = db.doctor.findOne({ name: "Смирнов Дмитрий" })._id;
+const infectiousDiseaseId = db.doctor.findOne({ name: "Кузнецова Елена" })._id;
+const endocrinologistId = db.doctor.findOne({ name: "Федорова Ольга" })._id;
+ 
+// Получаем идентификаторы людей
+const petrId = db.peopleNew.findOne({ name: "Петр Петров" })._id;
+const mariaId = db.peopleNew.findOne({ name: "Мария Иванова" })._id;
+const ivanId = db.peopleNew.findOne({ name: "Иван Сидоров" })._id;
+const annaId = db.peopleNew.findOne({ name: "Анна Кузнецова" })._id;
+const dmitryId = db.peopleNew.findOne({ name: "Дмитрий Смирнов" })._id;
+const elenaId = db.peopleNew.findOne({ name: "Елена Федорова" })._id;
+const olgaId = db.peopleNew.findOne({ name: "Ольга Козлова" })._id;
+ 
+// Обновляем коллекцию disease (добавляем симптомы и назначения)
+db.disease.updateMany(
+   {},
+   [
+       { $set: {
+           symptoms: {
+               $switch: {
+                   branches: [
+                       { case: { $eq: ["$name", "Грипп"] }, then: [coughId, feverId, soreThroatId, runnyNoseId] },
+                       { case: { $eq: ["$name", "Пневмония"] }, then: [coughId, feverId] },
+                       { case: { $eq: ["$name", "Гипертония"] }, then: [highPressureId, headacheId] },
+                       { case: { $eq: ["$name", "Диабет"] }, then: [] },
+                       { case: { $eq: ["$name", "Астма"] }, then: [coughId] },
+                       { case: { $eq: ["$name", "Аллергия"] }, then: [runnyNoseId] },
+                       { case: { $eq: ["$name", "Гастрит"] }, then: [nauseaId] }
+                   ],
+                   default: []
+               }
+           },
+           prescriptions: {
+               $switch: {
+                   branches: [
+                       { case: { $eq: ["$name", "Грипп"] }, then: [paracetamolId, oseltamivirId] },
+                       { case: { $eq: ["$name", "Пневмония"] }, then: [amoxicillinId] },
+                       { case: { $eq: ["$name", "Гипертония"] }, then: [captoprilId] },
+                       { case: { $eq: ["$name", "Диабет"] }, then: [insulinId] },
+                       { case: { $eq: ["$name", "Астма"] }, then: [] },
+                       { case: { $eq: ["$name", "Аллергия"] }, then: [suprastinId] },
+                       { case: { $eq: ["$name", "Гастрит"] }, then: [omeprazoleId] }
+                   ],
+                   default: []
+               }
+           }
+       }}
+   ]
+);
+ 
+// Обновляем коллекцию peopleNew (добавляем болезни и врача)
+db.peopleNew.updateMany(
+   {},
+   [
+       { $set: {
+           diseases: {
+               $switch: {
+                   branches: [
+                       { case: { $eq: ["$name", "Петр Петров"] }, then: [fluId] },
+                       { case: { $eq: ["$name", "Мария Иванова"] }, then: [hypertensionId] },
+                       { case: { $eq: ["$name", "Иван Сидоров"] }, then: [pneumoniaId] },
+                       { case: { $eq: ["$name", "Анна Кузнецова"] }, then: [diabetesId] },
+                       { case: { $eq: ["$name", "Дмитрий Смирнов"] }, then: [asthmaId] },
+                       { case: { $eq: ["$name", "Елена Федорова"] }, then: [gastritisId] },
+                       { case: { $eq: ["$name", "Ольга Козлова"] }, then: [allergyId] }
+                   ],
+                   default: []
+               }
+           },
+           doctor: {
+               $switch: {
+                   branches: [
+                       { case: { $eq: ["$name", "Петр Петров"] }, then: infectiousDiseaseId },
+                       { case: { $eq: ["$name", "Мария Иванова"] }, then: cardiologistId },
+                       { case: { $eq: ["$name", "Иван Сидоров"] }, then: pulmonologistId },
+                       { case: { $eq: ["$name", "Анна Кузнецова"] }, then: endocrinologistId },
+                       { case: { $eq: ["$name", "Дмитрий Смирнов"] }, then: pulmonologistId },
+                       { case: { $eq: ["$name", "Елена Федорова"] }, then: gastroenterologistId },
+                       { case: { $eq: ["$name", "Ольга Козлова"] }, then: allergistId }
+                   ],
+                   default: null
+               }
+           }
+       }}
+   ]
+);
+ 
+// Обновляем коллекцию prescriptionNew (добавляем связь с человеком)
+db.prescriptionNew.updateMany(
+   {},
+   [
+       { $set: {
+           person: {
+               $switch: {
+                   branches: [
+                       { case: { $eq: ["$medication", "Парацетамол"] }, then: petrId },
+                       { case: { $eq: ["$medication", "Каптоприл"] }, then: mariaId },
+                       { case: { $eq: ["$medication", "Амоксициллин"] }, then: ivanId },
+                       { case: { $eq: ["$medication", "Инсулин"] }, then: annaId },
+                       { case: { $eq: ["$medication", "Супрастин"] }, then: olgaId },
+                       { case: { $eq: ["$medication", "Омепразол"] }, then: elenaId },
+                       { case: { $eq: ["$medication", "Оселтамивир"] }, then: petrId }
+                   ],
+                   default: null
+               }
+           }
+       }}
+   ]
+);
+ 
+// Проверка результата
+print("Связи успешно созданы. Пример данных:");
+ 
+// Проверка коллекции disease
+print("Коллекция disease:");
+db.disease.find().forEach(doc => {
+   print(`Болезнь: ${doc.name}, Симптомы: ${doc.symptoms}, Назначения: ${doc.prescriptions}`);
+});
+ 
+// Проверка коллекции peopleNew
+print("\nКоллекция peopleNew:");
+db.peopleNew.find().forEach(doc => {
+   print(`Пациент: ${doc.name}, Болезни: ${doc.diseases}, Врач: ${doc.doctor}`);
+});
+ 
+// Проверка коллекции prescriptionNew
+print("\nКоллекция prescriptionNew:");
+db.prescriptionNew.find().forEach(doc => {
+   print(`Лекарство: ${doc.medication}, Пациент: ${doc.person}`);
+});
 
 
 
-Дай команды для нахождения
-
-Начнем с ваших вопросов.
-
-1. Режиссер фильма "The Matrix":
-   Фильм "The Matrix" 
-
-2. Количество фильмов для каждого актера:
-   
-3. Человек, участвовавший в наибольшем количестве фильмов в качестве актера:
-   
-4. Фильм с наибольшим количеством актеров и режиссеров:
-   
-Теперь давайте рассмотрим команды для выполнения различных операций с базой данных:
-
-- Вывод актеров с определенной фамилией:
-   Например, если вам нужно найти всех актеров с фамилией "Smith", выполните:
-
-     MATCH (p:Person) WHERE p.name CONTAINS 'Smith'
-   RETURN p.name
-   
-- Удаление актера:
-   Чтобы удалить актера из базы данных, можно использовать такой запрос (например, для удаление актера с именем "John Doe"):
-
-     MATCH (p:Person {name:'John Doe'})
-   DETACH DELETE p
-   
-- Вставка нового актера:
-   Для добавления нового актера в базу данных используйте следующий запрос:
-
-     CREATE (p:Person {name:'Новый Актер', born:1990})
-   
-- Обновление информации об актере:
-   Если необходимо изменить имя актера, можно использовать такой запрос:
-
-     MATCH (p:Person {name:'Старое имя'})
-   SET p.name = 'Новое имя'
-   
-Если у вас есть дополнительные вопросы или задачи, которые необходимо решить, не стесняйтесь спрашивать!
 
 
-Вот Cypher-запросы для выполнения ваших задач в Neo4j на основе предоставленной базы данных:
 
-1. Режиссер фильма "The Matrix":
-```cypher
-MATCH (m:Movie {title: 'The Matrix'})<-[:DIRECTED]-(d:Person)
-RETURN d.name AS director_name;
-```
 
-2. Количество фильмов для каждого актера:
-```cypher
-MATCH (a:Person)-[:ACTED_IN]->(m:Movie)
-RETURN a.name AS actor_name, COUNT(m) AS movie_count
-ORDER BY movie_count DESC;
-```
 
-3. Человек, участвовавший в наибольшем количестве фильмов в качестве актера:
-```cypher
-MATCH (a:Person)-[:ACTED_IN]->(m:Movie)
-RETURN a.name AS actor_name, COUNT(m) AS movie_count
-ORDER BY movie_count DESC
-LIMIT 1;
-```
+Максим, [27 мар. 2025 в 11:17]
+1 задание
+db.peopleNew2.aggregate([
+  {
+    $match: {
+      diseaseN: { $exists: true, $ne: [] }
+    }
+  },
+  {
+    $lookup: {
+      from: "disease2", localField: "diseaseN", foreignField: "_id", as: "diseases_info"
+    }
+  },
+  {
+    $project: {
+      _id: 0, name: 1, age: 1, diseases: "$diseases_info.name" // Извлекаем только названия болезней
+    }
+  },
+  {
+    $sort: { age: -1 } // Сортировка по возрасту (по убыванию)
+  }
+])
+///////////////////////////////////
 
-4. Фильм с наибольшим количеством актеров и режиссеров:
-```cypher
-MATCH (m:Movie)
-OPTIONAL MATCH (a:Person)-[:ACTED_IN]->(m)
-OPTIONAL MATCH (d:Person)-[:DIRECTED]->(m)
-WITH m, 
-     COUNT(DISTINCT a) AS actor_count, 
-     COUNT(DISTINCT d) AS director_count
-RETURN m.title AS movie_title, 
-       actor_count, 
-       director_count, 
-       actor_count + director_count AS total_people
-ORDER BY total_people DESC
-LIMIT 1;
-```
 
-Дополнительные запросы, которые могут быть полезны:
 
-- Вывод актеров с определенной фамилией (например, "Hanks"):
-```cypher
-MATCH (p:Person) 
-WHERE p.name CONTAINS 'Hanks' 
-RETURN p.name;
-```
+2 задание
+db.peopleNew2.aggregate([
+  { $unwind: "$diseaseN" },
+  {
+    $group: {
+      _id: "$diseaseN", patientCount: { $sum: 1 }
+    }
+  },
+  {
+    $lookup: {
+      from: "disease2", localField: "_id", foreignField: "_id", as: "diseaseInfo"
+    }
+  },
+  { $unwind: "$diseaseInfo" },
+  {
+    $project: {
+      _id: 0, disease: "$diseaseInfo.name", patientCount: 1
+    }
+  },
+  { $sort: { patientCount: -1 } }
+])
+//////////////////////////////////////
 
-- Удаление актера (например, "Emil Eifrem"):
-```cypher
-MATCH (p:Person {name:'Emil Eifrem'})
-DETACH DELETE p;
-```
 
-- Вставка нового актера:
-```cypher
-CREATE (p:Person {name:'Новый Актер', born:1990});
-```
 
-- Обновление информации об актере:
-```cypher
-MATCH (p:Person {name:'Tom Hanks'})
-SET p.born = 1956;
-```
 
+3 задание
+db.peopleNew2.aggregate([
+  {
+    $lookup: {
+      from: "disease2", localField: "diseaseN", foreignField: "_id", as: "diseases"
+    }
+  },
+  {
+    $match: {
+      "diseases.name": "Грипп"
+    }
+  },
+  {
+    $sort: { age: 1 }
+  },
+  {
+    $project: {
+      _id: 0, name: 1, age: 1
+    }
+  }
+])
+////////////////////////////////
+
+
+
+
+4 задание
+db.prescriptionNew2.aggregate([
+  {
+    $group: {
+      _id: "$medication", totalPrescriptions: { $sum: 1 }, uniqueDoctors: { $addToSet: "$doctorN" }, uniquePatients: { $addToSet: "$patientN" }
+    }
+  },
+  {
+    $addFields: {
+      doctorCount: { $size: "$uniqueDoctors" }, patientCount: { $size: "$uniquePatients" }
+    }
+  },
+  { $sort: { totalPrescriptions: -1 } },
+  {
+    $project: {
+      _id: 0, medication: "$_id", totalPrescriptions: 1, doctorCount: 1, patientCount: 1
+    }
+  }
+])
+/////////////////////////////////
+
+
+
+
+5 задание 
+db.doctor2.aggregate([
+  {
+    $sort: {
+      specialty: 1, experience: -1
+    }
+  },
+  {
+    $group: {
+      _id: "$specialty", topDoctor: { $first: "$$ROOT" }
+    }
+  },
+  {
+    $project: {
+      _id: 0, specialty: "$_id", doctorName: "$topDoctor.name", experience: "$topDoctor.experience"
+    }
+  },
+  { $sort: { specialty: 1 } }
+])
+////////////////////////////////
+
+
+
+
+6 задание
+db.peopleNew2.aggregate([
+  { $unwind: "$diseaseN" },
+  {
+    $lookup: {
+      from: "disease2", localField: "diseaseN", foreignField: "_id", as: "diseaseInfo"
+    }
+  },
+  { $unwind: "$diseaseInfo" },
+  {
+    $group: {
+      _id: "$diseaseInfo.name", averageAge: { $avg: "$age" }, patientCount: { $sum: 1 }, severity: { $first: "$diseaseInfo.severity" }
+    }
+  },
+  { $sort: { "_id": 1 } },
+  {
+    $project: {
+      _id: 0,
+      diseaseName: "$_id", averageAge: { $round: ["$averageAge", 1] }, patientCount: 1, severity: 1
+    }
+  }
+])
+////////////////////////////////
+
+
+
+
+7 задание
+db.peopleNew2.aggregate([
+  { $unwind: "$diseaseN" },
+  {
+    $lookup: {
+      from: "disease2", localField: "diseaseN", foreignField: "_id", as: "diseaseInfo"
+    }
+  },
+  { $unwind: "$diseaseInfo" },
+  {
+    $group: {
+      _id: "$diseaseInfo.name", patientCount: { $sum: 1 }, severity: { $first: "$diseaseInfo.severity" }
+    }
+  },
+  { $sort: { patientCount: -1 } },
+  { $limit: 3 },
+  {
+    $project: {
+      _id: 0, diseaseName: "$_id", patientCount: 1, severity: 1
+    }
+  }
+])
+///////////////////////////
