@@ -1,10 +1,6 @@
-import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
-import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
-import org.apache.commons.math3.analysis.interpolation.PolynomialInterpolator;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import java.util.Arrays;
-import java.awt.*;
 import javax.swing.*;
+import java.awt.*;
+import java.util.Arrays;
 
 public class InterpolationLab {
 
@@ -30,32 +26,42 @@ public class InterpolationLab {
         
         for (int n : nValues) {
             // Равноотстоящие узлы
-            double[] equidistantX = new double[n+1];
-            double[] equidistantY = new double[n+1];
+            double[] xEq = new double[n+1];
+            double[] yEq = new double[n+1];
             for (int i = 0; i <= n; i++) {
-                equidistantX[i] = -1 + 2.0 * i / n;
-                equidistantY[i] = originalFunction(equidistantX[i]);
+                xEq[i] = -1 + 2.0 * i / n;
+                yEq[i] = originalFunction(xEq[i]);
             }
             
             // Чебышевские узлы
-            double[] chebyshevX = new double[n+1];
-            double[] chebyshevY = new double[n+1];
+            double[] xCh = new double[n+1];
+            double[] yCh = new double[n+1];
             for (int i = 0; i <= n; i++) {
-                chebyshevX[i] = Math.cos((2*i + 1) * Math.PI / (2*(n + 1)));
-                chebyshevY[i] = originalFunction(chebyshevX[i]);
+                xCh[i] = Math.cos((2*i + 1) * Math.PI / (2*(n + 1)));
+                yCh[i] = originalFunction(xCh[i]);
             }
-            
-            // Создаем интерполяционные полиномы
-            PolynomialInterpolator interpolator = new PolynomialInterpolator();
-            UnivariateFunction equidistantPoly = interpolator.interpolate(equidistantX, equidistantY);
-            UnivariateFunction chebyshevPoly = interpolator.interpolate(chebyshevX, chebyshevY);
             
             // Визуализация
             plotResults("Интерполяция Лагранжа (n=" + n + ") - равноотстоящие узлы", 
-                       equidistantX, equidistantY, equidistantPoly);
+                       xEq, yEq, x -> lagrangeInterpolate(xEq, yEq, x));
             plotResults("Интерполяция Лагранжа (n=" + n + ") - чебышевские узлы", 
-                       chebyshevX, chebyshevY, chebyshevPoly);
+                       xCh, yCh, x -> lagrangeInterpolate(xCh, yCh, x));
         }
+    }
+    
+    // Реализация интерполяции Лагранжа
+    public static double lagrangeInterpolate(double[] x, double[] y, double point) {
+        double result = 0;
+        for (int i = 0; i < x.length; i++) {
+            double term = y[i];
+            for (int j = 0; j < x.length; j++) {
+                if (j != i) {
+                    term *= (point - x[j]) / (x[i] - x[j]);
+                }
+            }
+            result += term;
+        }
+        return result;
     }
     
     // 2. Интерполяция кубическими сплайнами
@@ -70,10 +76,9 @@ public class InterpolationLab {
                 y[i] = originalFunction(x[i]);
             }
             
-            SplineInterpolator splineInterpolator = new SplineInterpolator();
-            UnivariateFunction spline = splineInterpolator.interpolate(x, y);
+            CubicSpline spline = new CubicSpline(x, y);
             
-            plotResults("Кубический сплайн (n=" + n + ")", x, y, spline);
+            plotResults("Кубический сплайн (n=" + n + ")", x, y, spline::value);
         }
     }
     
@@ -82,8 +87,7 @@ public class InterpolationLab {
         double[] x = {2, 3, 5, 7};
         double[] y = {4, -2, 6, -3};
         
-        SplineInterpolator splineInterpolator = new SplineInterpolator();
-        UnivariateFunction spline = splineInterpolator.interpolate(x, y);
+        CubicSpline spline = new CubicSpline(x, y);
         
         // Проверка в узловых точках
         System.out.println("Проверка сплайна в узловых точках:");
@@ -92,12 +96,93 @@ public class InterpolationLab {
                              x[i], spline.value(x[i]), y[i]);
         }
         
-        plotResults("Кубический сплайн для табличных данных", x, y, spline);
+        plotResults("Кубический сплайн для табличных данных", x, y, spline::value);
+    }
+    
+    // Класс для реализации кубического сплайна
+    static class CubicSpline {
+        private final double[] x;
+        private final double[] y;
+        private final double[] a;
+        private final double[] b;
+        private final double[] c;
+        private final double[] d;
+        
+        public CubicSpline(double[] x, double[] y) {
+            this.x = x;
+            this.y = y;
+            int n = x.length - 1;
+            
+            // Коэффициенты сплайна
+            a = new double[n+1];
+            b = new double[n];
+            c = new double[n+1];
+            d = new double[n];
+            
+            // Вычисление коэффициентов
+            calculateCoefficients();
+        }
+        
+        private void calculateCoefficients() {
+            int n = x.length - 1;
+            double[] h = new double[n];
+            double[] alpha = new double[n];
+            
+            for (int i = 0; i < n; i++) {
+                h[i] = x[i+1] - x[i];
+            }
+            
+            for (int i = 1; i < n; i++) {
+                alpha[i] = 3/h[i]*(y[i+1]-y[i]) - 3/h[i-1]*(y[i]-y[i-1]);
+            }
+            
+            double[] l = new double[n+1];
+            double[] mu = new double[n+1];
+            double[] z = new double[n+1];
+            
+            l[0] = 1;
+            mu[0] = 0;
+            z[0] = 0;
+            
+            for (int i = 1; i < n; i++) {
+                l[i] = 2*(x[i+1]-x[i-1]) - h[i-1]*mu[i-1];
+                mu[i] = h[i]/l[i];
+                z[i] = (alpha[i]-h[i-1]*z[i-1])/l[i];
+            }
+            
+            l[n] = 1;
+            z[n] = 0;
+            c[n] = 0;
+            
+            for (int j = n-1; j >= 0; j--) {
+                c[j] = z[j] - mu[j]*c[j+1];
+                b[j] = (y[j+1]-y[j])/h[j] - h[j]*(c[j+1]+2*c[j])/3;
+                d[j] = (c[j+1]-c[j])/(3*h[j]);
+            }
+            
+            for (int j = 0; j < n; j++) {
+                a[j] = y[j];
+            }
+        }
+        
+        public double value(double point) {
+            if (point < x[0] || point > x[x.length-1]) {
+                return 0;
+            }
+            
+            int i = 0;
+            while (i < x.length-1 && point > x[i+1]) {
+                i++;
+            }
+            
+            double dx = point - x[i];
+            return a[i] + b[i]*dx + c[i]*dx*dx + d[i]*dx*dx*dx;
+        }
     }
     
     // Метод для визуализации результатов
     public static void plotResults(String title, double[] xNodes, double[] yNodes, 
-                                 UnivariateFunction interpolatedFunction) {
+                                 java.util.function.DoubleUnaryOperator function) {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setSize(800, 600);
@@ -131,6 +216,10 @@ public class InterpolationLab {
                 g2.drawLine(padding, height-padding, width-padding, height-padding);
                 g2.drawLine(padding, height-padding, padding, padding);
                 
+                // Подписи осей
+                g2.drawString("X", width-padding+5, height-padding+15);
+                g2.drawString("Y", padding-15, padding+5);
+                
                 // Оригинальная функция (только для не табличных данных)
                 if (!title.contains("табличных данных")) {
                     g2.setColor(Color.BLUE);
@@ -153,7 +242,7 @@ public class InterpolationLab {
                 int prevX = -1, prevY = -1;
                 for (int px = 0; px < width; px++) {
                     double x = xMin + (xMax - xMin) * px / (width - 1);
-                    double y = interpolatedFunction.value(x);
+                    double y = function.applyAsDouble(x);
                     int py = height - padding - (int)((y - yMin) * (height - 2*padding) / (yMax - yMin));
                     
                     if (prevX >= 0 && py >= padding && py <= height-padding) {
@@ -170,6 +259,16 @@ public class InterpolationLab {
                     int py = height - padding - (int)((yNodes[i] - yMin) * (height - 2*padding) / (yMax - yMin));
                     g2.fillOval(px-3, py-3, 6, 6);
                 }
+                
+                // Легенда
+                g2.setColor(Color.BLUE);
+                if (!title.contains("табличных данных")) {
+                    g2.drawString("Исходная функция", width - 150, padding + 20);
+                }
+                g2.setColor(Color.RED);
+                g2.drawString("Интерполированная", width - 150, padding + 40);
+                g2.setColor(Color.GREEN);
+                g2.drawString("Узлы интерполяции", width - 150, padding + 60);
             }
         };
         
