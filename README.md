@@ -1,129 +1,179 @@
-public class LinearSystems {
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.PolynomialInterpolator;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import java.util.Arrays;
+import java.awt.*;
+import javax.swing.*;
+
+public class InterpolationLab {
+
     public static void main(String[] args) {
-        // Первая система уравнений
-        System.out.println("Решение первой системы:");
-        solveFirstSystem();
+        // Задание 1: Интерполяция многочленом Лагранжа
+        testLagrangeInterpolation();
         
-        // Вторая система уравнений
-        System.out.println("\nРешение второй системы:");
-        solveSecondSystem();
+        // Задание 2: Интерполяция кубическими сплайнами
+        testSplineInterpolation();
+        
+        // Задание 2.2: Кубический сплайн для табличных данных
+        testTableSplineInterpolation();
     }
     
-    // Функция для вычисления erf (пока упрощенная)
-    public static double erf(double x) {
-        // Это очень простой вариант, на практике нужно использовать точный расчет
-        return x - (x*x*x)/3 + (x*x*x*x*x)/10;
+    // Исходная функция f(x) = 1/(1 + 25x^2)
+    public static double originalFunction(double x) {
+        return 1.0 / (1.0 + 25 * x * x);
     }
     
-    public static void solveFirstSystem() {
-        // Коэффициенты системы уравнений
-        double[][] matrix = {
-            {1.00, 0.80, 0.64},
-            {1.00, 0.90, 0.81},
-            {1.00, 1.10, 1.21}
-        };
+    // 1. Интерполяция многочленом Лагранжа
+    public static void testLagrangeInterpolation() {
+        int[] nValues = {5, 10, 15}; // Разные значения n
         
-        // Правая часть уравнений
-        double[] b = {
-            erf(0.80),
-            erf(0.90),
-            erf(1.10)
-        };
-        
-        // Попробуем решить систему методом Крамера
-        double detA = determinant(matrix);
-        
-        if (Math.abs(detA) < 0.000001) {
-            System.out.println("Система не имеет единственного решения");
-            return;
-        }
-        
-        // Матрицы для метода Крамера
-        double[][] matrixX1 = replaceColumn(matrix, b, 0);
-        double[][] matrixX2 = replaceColumn(matrix, b, 1);
-        double[][] matrixX3 = replaceColumn(matrix, b, 2);
-        
-        double x1 = determinant(matrixX1) / detA;
-        double x2 = determinant(matrixX2) / detA;
-        double x3 = determinant(matrixX3) / detA;
-        
-        System.out.println("Решение:");
-        System.out.println("x1 = " + x1);
-        System.out.println("x2 = " + x2);
-        System.out.println("x3 = " + x3);
-        
-        // Проверка невязки
-        double res1 = matrix[0][0]*x1 + matrix[0][1]*x2 + matrix[0][2]*x3 - b[0];
-        double res2 = matrix[1][0]*x1 + matrix[1][1]*x2 + matrix[1][2]*x3 - b[1];
-        double res3 = matrix[2][0]*x1 + matrix[2][1]*x2 + matrix[2][2]*x3 - b[2];
-        
-        System.out.println("\nНевязка:");
-        System.out.println("Для первого уравнения: " + res1);
-        System.out.println("Для второго уравнения: " + res2);
-        System.out.println("Для третьего уравнения: " + res3);
-        
-        // Сравнение суммы решений с erf(1.0)
-        System.out.println("\nСумма решений: " + (x1 + x2 + x3));
-        System.out.println("erf(1.0): " + erf(1.0));
-    }
-    
-    public static void solveSecondSystem() {
-        // Коэффициенты второй системы
-        double[][] matrix = {
-            {0.1, 0.2, 0.3},
-            {0.4, 0.5, 0.6},
-            {0.7, 0.8, 0.9}
-        };
-        
-        double[] b = {0.1, 0.3, 0.5};
-        
-        double detA = determinant(matrix);
-        
-        if (Math.abs(detA) < 0.000001) {
-            System.out.println("Система имеет бесконечно много решений");
-            
-            // Попробуем найти хотя бы одно решение
-            // Упростим систему, исключив последнее уравнение
-            double x3 = 1.0; // Просто предположим
-            
-            // Решаем первые два уравнения
-            // 0.1x1 + 0.2x2 = 0.1 - 0.3x3
-            // 0.4x1 + 0.5x2 = 0.3 - 0.6x3
-            
-            double right1 = 0.1 - 0.3*x3;
-            double right2 = 0.3 - 0.6*x3;
-            
-            // Решаем систему 2x2
-            double det = 0.1*0.5 - 0.2*0.4;
-            double x1 = (right1*0.5 - 0.2*right2) / det;
-            double x2 = (0.1*right2 - right1*0.4) / det;
-            
-            System.out.println("Одно из возможных решений:");
-            System.out.println("x1 = " + x1);
-            System.out.println("x2 = " + x2);
-            System.out.println("x3 = " + x3);
-        } else {
-            System.out.println("Система имеет единственное решение");
-            // Здесь должен быть код решения
-        }
-    }
-    
-    // Простая функция для вычисления определителя 3x3
-    public static double determinant(double[][] matrix) {
-        return matrix[0][0]*(matrix[1][1]*matrix[2][2] - matrix[1][2]*matrix[2][1])
-             - matrix[0][1]*(matrix[1][0]*matrix[2][2] - matrix[1][2]*matrix[2][0])
-             + matrix[0][2]*(matrix[1][0]*matrix[2][1] - matrix[1][1]*matrix[2][0]);
-    }
-    
-    // Замена столбца в матрице
-    public static double[][] replaceColumn(double[][] matrix, double[] column, int colIndex) {
-        double[][] result = new double[3][3];
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                result[i][j] = matrix[i][j];
+        for (int n : nValues) {
+            // Равноотстоящие узлы
+            double[] equidistantX = new double[n+1];
+            double[] equidistantY = new double[n+1];
+            for (int i = 0; i <= n; i++) {
+                equidistantX[i] = -1 + 2.0 * i / n;
+                equidistantY[i] = originalFunction(equidistantX[i]);
             }
-            result[i][colIndex] = column[i];
+            
+            // Чебышевские узлы
+            double[] chebyshevX = new double[n+1];
+            double[] chebyshevY = new double[n+1];
+            for (int i = 0; i <= n; i++) {
+                chebyshevX[i] = Math.cos((2*i + 1) * Math.PI / (2*(n + 1)));
+                chebyshevY[i] = originalFunction(chebyshevX[i]);
+            }
+            
+            // Создаем интерполяционные полиномы
+            PolynomialInterpolator interpolator = new PolynomialInterpolator();
+            UnivariateFunction equidistantPoly = interpolator.interpolate(equidistantX, equidistantY);
+            UnivariateFunction chebyshevPoly = interpolator.interpolate(chebyshevX, chebyshevY);
+            
+            // Визуализация
+            plotResults("Интерполяция Лагранжа (n=" + n + ") - равноотстоящие узлы", 
+                       equidistantX, equidistantY, equidistantPoly);
+            plotResults("Интерполяция Лагранжа (n=" + n + ") - чебышевские узлы", 
+                       chebyshevX, chebyshevY, chebyshevPoly);
         }
-        return result;
+    }
+    
+    // 2. Интерполяция кубическими сплайнами
+    public static void testSplineInterpolation() {
+        int[] nValues = {5, 10, 20}; // Разные значения n
+        
+        for (int n : nValues) {
+            double[] x = new double[n+1];
+            double[] y = new double[n+1];
+            for (int i = 0; i <= n; i++) {
+                x[i] = -1 + 2.0 * i / n;
+                y[i] = originalFunction(x[i]);
+            }
+            
+            SplineInterpolator splineInterpolator = new SplineInterpolator();
+            UnivariateFunction spline = splineInterpolator.interpolate(x, y);
+            
+            plotResults("Кубический сплайн (n=" + n + ")", x, y, spline);
+        }
+    }
+    
+    // 2.2 Кубический сплайн для табличных данных
+    public static void testTableSplineInterpolation() {
+        double[] x = {2, 3, 5, 7};
+        double[] y = {4, -2, 6, -3};
+        
+        SplineInterpolator splineInterpolator = new SplineInterpolator();
+        UnivariateFunction spline = splineInterpolator.interpolate(x, y);
+        
+        // Проверка в узловых точках
+        System.out.println("Проверка сплайна в узловых точках:");
+        for (int i = 0; i < x.length; i++) {
+            System.out.printf("f(%.1f) = %.4f (ожидалось %.4f)%n", 
+                             x[i], spline.value(x[i]), y[i]);
+        }
+        
+        plotResults("Кубический сплайн для табличных данных", x, y, spline);
+    }
+    
+    // Метод для визуализации результатов
+    public static void plotResults(String title, double[] xNodes, double[] yNodes, 
+                                 UnivariateFunction interpolatedFunction) {
+        JFrame frame = new JFrame(title);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setSize(800, 600);
+        
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D)g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
+                                    RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                int width = getWidth();
+                int height = getHeight();
+                int padding = 50;
+                
+                // Масштабирование
+                double xMin = -1.1, xMax = 1.1;
+                if (title.contains("табличных данных")) {
+                    xMin = 1.5;
+                    xMax = 7.5;
+                }
+                
+                double yMin = -1.1, yMax = 1.1;
+                if (title.contains("табличных данных")) {
+                    yMin = -4;
+                    yMax = 7;
+                }
+                
+                // Оси координат
+                g2.drawLine(padding, height-padding, width-padding, height-padding);
+                g2.drawLine(padding, height-padding, padding, padding);
+                
+                // Оригинальная функция (только для не табличных данных)
+                if (!title.contains("табличных данных")) {
+                    g2.setColor(Color.BLUE);
+                    int prevX = -1, prevY = -1;
+                    for (int px = 0; px < width; px++) {
+                        double x = xMin + (xMax - xMin) * px / (width - 1);
+                        double y = originalFunction(x);
+                        int py = height - padding - (int)((y - yMin) * (height - 2*padding) / (yMax - yMin));
+                        
+                        if (prevX >= 0) {
+                            g2.drawLine(prevX, prevY, px, py);
+                        }
+                        prevX = px;
+                        prevY = py;
+                    }
+                }
+                
+                // Интерполированная функция
+                g2.setColor(Color.RED);
+                int prevX = -1, prevY = -1;
+                for (int px = 0; px < width; px++) {
+                    double x = xMin + (xMax - xMin) * px / (width - 1);
+                    double y = interpolatedFunction.value(x);
+                    int py = height - padding - (int)((y - yMin) * (height - 2*padding) / (yMax - yMin));
+                    
+                    if (prevX >= 0 && py >= padding && py <= height-padding) {
+                        g2.drawLine(prevX, prevY, px, py);
+                    }
+                    prevX = px;
+                    prevY = py;
+                }
+                
+                // Узлы интерполяции
+                g2.setColor(Color.GREEN);
+                for (int i = 0; i < xNodes.length; i++) {
+                    int px = padding + (int)((xNodes[i] - xMin) * (width - 2*padding) / (xMax - xMin));
+                    int py = height - padding - (int)((yNodes[i] - yMin) * (height - 2*padding) / (yMax - yMin));
+                    g2.fillOval(px-3, py-3, 6, 6);
+                }
+            }
+        };
+        
+        frame.add(panel);
+        frame.setVisible(true);
     }
 }
